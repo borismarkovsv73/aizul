@@ -23,7 +23,7 @@ Ukratko, pravila igre su sledeća:
 
 - Igra traje dok neki igrač ne popuni jedan horizontalni red na svom zidu. Nakon toga sledi završno bodovanje – dodatni poeni se dobijaju za kompletne redove, kolone ili svih pet pločica iste boje. Pobednik je igrač sa najviše osvojenih poena.
 
-![Prikaz jednog stanja igre](docs/slika1.png)
+![Prikaz jednog stanja igre](slika1.png)
 *Slika 1 - Prikaz jednog stanja table igrača*
 
 Nalik šahu, pravila igre su prilično jednostavna, međutim postoji bezbroj različitih strategija za igranje i odabir najboljeg poteza može biti vrlo kompleksan. Sa time, želimo da napravimo agenta sa osnovnom funkcionalnošću da odredi najbolji mogući potez u datom stanju table.
