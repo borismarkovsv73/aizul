@@ -28,7 +28,7 @@ Ukratko, pravila igre su sledeća:
 
 Nalik šahu, pravila igre su prilično jednostavna, međutim postoji bezbroj različitih strategija za igranje i odabir najboljeg poteza može biti vrlo kompleksan. Sa time, želimo da napravimo agenta sa osnovnom funkcionalnošću da odredi najbolji mogući potez u datom stanju table.
 
-Većina implementacija ekspertskih sistema za igranje tabličnih igara poput ***Azul*** su zasnovana na algoritmima poput ***minimax***, ***Monte Carlo Tree Search*** ili ***mašinskog učenja***. Interaktivni sistemi koji su namenjeni da objasne i nauče igrače da igraju se često zadržavaju samo na jednoj rundi (ili par njih) koja je skoro uvek unapred predodređena i linearna bez prilike za učenje kompleksnih strategija. Sa time, naš projekat bi zasnovali na *pravilima*, *forward i backwards chaining*, i *complex event processing* (za šta smatramo da je ***Azul*** naročito pogodan), sa funkcionalnošću da objasni odluku svog poteza koji smatra optimalnim. Verujemo da će ovakav pristup omogućiti korisnicima da bolje nauče da igraju ***Azul*** od drugih već postojećih rešenja.
+Većina implementacija ekspertskih sistema za igranje tabličnih igara poput ***Azul*** su zasnovana na algoritmima poput ***minimax***, ***Monte Carlo Tree Search*** ili ***mašinskog učenja***. Interaktivni sistemi koji su namenjeni da objasne i nauče igrače da igraju se često zadržavaju samo na jednoj rundi (ili par njih) koja je skoro uvek unapred predodređena i linearna bez prilike za učenje kompleksnih strategija. Sa time, naš projekat bi zasnovali na *pravilima*, *forward i backwards chaining*, i *complex event processing* (za šta smatramo da je ***Azul*** naročito pogodan), sa funkcionalnošću da **objasni odluku svog poteza koji smatra optimalnim**. Verujemo da će ovakav pristup omogućiti korisnicima da bolje nauče da igraju ***Azul*** od drugih već postojećih rešenja.
 
 Primeri implementacija, inspiracije i relevantna literatura:
 1. [AlphaGo - program koji igra tabličnu igru Go](https://deepmind.google/research/projects/alphago/)
@@ -37,6 +37,30 @@ Primeri implementacija, inspiracije i relevantna literatura:
 
 - - -
 ### Metodologija rada
+
+#### Primena forward i backward chaining-a
+
+*Forward chaining* kreće od trenutnog stanja igre i primenjuje pravila dok ne pronađe validne akcije. Na primer:
+- Ako u fabrici postoje 3 pločice boje X, a naš red prima tačno 3 pločice → predloži da se one uzmu.
+- Ako u centru postoji kombinacija pločica koja vodi u kazneni red → dodeli tom potezu niži prioritet.
+
+*Backward chaining* polazi od cilja, npr. „maksimizacija poena u sledećoj rundi“, i proverava da li postoje uslovi da se on postigne. Na primer: „Da li neki od poteza vodi do završavanja reda/kolone?“ Ako da, potez se potvrđuje kao optimalan. Ili, ako je cilj „sprečiti protivnika da završi red“, sistem proverava da li uzimanjem određene boje može da blokira protivnika.
+
+Kombinovanjem ova dva pristupa agent prvo pomoću forward chaining-a generiše skup svih mogućih poteza, a zatim kroz backward chaining proverava koji od njih zadovoljavaju viši cilj (maksimizacija bodova, dugoročna strategija, blokiranje protivnika). Na taj način sistem uspeva da balansira kratkoročne koristi sa dugoročnim planiranjem.
+
+#### Primena Complex Event Processing-a (CEP)
+*CEP* bi u našem sistemu imao svrhu da prepozna obrasce događaja kroz više poteza i reaguje na njih. Na primer:
+- Ako u toku iste runde više igrača ciljaju istu boju, sistem detektuje „konflikt oko resursa“ i može da predloži da naš agent uzme sve te pločice, kako bi sebi obezbedio prednost i istovremeno blokirao protivnika.
+- Ako se tokom više rundi ponavlja obrazac da agent ostavlja nepovoljnu količinu pločica u centru (npr. često „gura“ višak pločica protivnicima), sistem može da prepozna taj trend i promeni heuristiku, tako da agent ubuduće izbegava poteze koji daju protivnicima očiglednu prednost.
+
+Na ovaj način CEP omogućava da agent ne reaguje samo na trenutno stanje, već i na tok igre i interakcije među igračima.
+
+#### Primeri pravila
+
+- Pravilo 1: Ako u fabrici postoje pločice boje X i u našem redu nedostaje tačno toliko pločica → potez dobija visok prioritet.
+- Pravilo 2: Ako uzimanje pločica boje X vodi do popunjavanja reda poda → potez dobija nizak prioritet.
+- Pravilo 3: Ako uzimanjem pločica boje X protivnik ne može da završi svoj red → potez dobija dodatnu vrednost.
+- Pravilo 4: Ako postoji izbor između poteza koji završava red i poteza koji započinje novu kolonu, a oba daju isti broj bodova → prioritet ima potez koji vodi ka formiranju bonus poena (kolona, svih pet boja).
 
 #### Ulaz programa
 - Stanje table svakog od igrača
@@ -51,7 +75,7 @@ Primeri implementacija, inspiracije i relevantna literatura:
 #### Baza znanja
 - Pravila igre
 - Heuristike za donošenje odluka
-- Šabloni tipičnih situacija i primećeno ponašanje igrača
+- Šabloni tipičnih situacija i primećena ponašanja igrača
   
 - - -
 ### Rezonovanje konkretnog primera
