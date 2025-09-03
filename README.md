@@ -41,7 +41,7 @@ Primeri implementacija, inspiracije i relevantna literatura:
 Sistem je podeljen u tri koherentna sloja koji rade zajedno:
 
 1. Forward Chaining Layer
-- Lanac pravila kroz koji će svaki od mogućih poteza proći, u njemu uključujemo taktičko i strateško rezonovanje. On će sadržati velik broj pravila koja dodeljuju ili oduzimaju bodove po kojima određujemo koliko je potez doobar (primere tih pravila možete videti u sledećem poglavlju).
+- Lanac pravila kroz koji će svaki od mogućih poteza proći, u njemu uključujemo taktičko i strateško rezonovanje. On će sadržati velik broj pravila koja dodeljuju ili oduzimaju bodove po kojima određujemo koliko je potez dobar (primere tih pravila možete videti u sledećem poglavlju).
   
 	- Ulaz: trenutno stanje igre (table, fabrike, centar, redovi poda, protivnici).
 	- Izlaz: lista mogućih poteza sa score-om (Move objekti).
