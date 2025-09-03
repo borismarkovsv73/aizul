@@ -38,29 +38,66 @@ Primeri implementacija, inspiracije i relevantna literatura:
 - - -
 ### Metodologija rada
 
-#### Primena forward i backward chaining-a
+Sistem je podeljen u tri koherentna sloja koji rade zajedno:
 
-*Forward chaining* kreće od trenutnog stanja igre i primenjuje pravila dok ne pronađe validne akcije. Na primer:
-- Ako u fabrici postoje 3 pločice boje X, a naš red prima tačno 3 pločice → predloži da se one uzmu.
-- Ako u centru postoji kombinacija pločica koja vodi u kazneni red → dodeli tom potezu niži prioritet.
+1. Forward Chaining Layer
+- Lanac pravila kroz koji će svaki od mogućih poteza proći, u njemu uključujemo taktičko i strateško rezonovanje. On će sadržati velik broj pravila koja dodeljuju ili oduzimaju bodove po kojima određujemo koliko je potez doobar (primere tih pravila možete videti u sledećem poglavlju).
+  
+	- Ulaz: trenutno stanje igre (table, fabrike, centar, redovi poda, protivnici).
+	- Izlaz: lista mogućih poteza sa score-om (Move objekti).
 
-*Backward chaining* polazi od cilja, npr. „maksimizacija poena u sledećoj rundi“, i proverava da li postoje uslovi da se on postigne. Na primer: „Da li neki od poteza vodi do završavanja reda/kolone?“ Ako da, potez se potvrđuje kao optimalan. Ili, ako je cilj „sprečiti protivnika da završi red“, sistem proverava da li uzimanjem određene boje može da blokira protivnika.
+2. CEP Layer
+- Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velik broj pločica u centarlnu fabriku, kraj igre...).
+  
+	- Ulaz: lista poteza i događaja iz runde (log).
+	- Izlaz: modifikacija score-a poteza, ne bira potez direktno.
 
-Kombinovanjem ova dva pristupa agent prvo pomoću forward chaining-a generiše skup svih mogućih poteza, a zatim kroz backward chaining proverava koji od njih zadovoljavaju viši cilj (maksimizacija bodova, dugoročna strategija, blokiranje protivnika). Na taj način sistem uspeva da balansira kratkoročne koristi sa dugoročnim planiranjem.
+3. Backward Chaining Layer
+- Proverava da li predloženi potez zadovoljava dugoročne ciljeve u zavisnosti od faze igre, može menjati (više o tome u poglavlju za backward chaining).
+  
+	- Ulaz: lista poteza sa score-om.
+	- Izlaz: filtrirani potezi → finalni potez.
 
-#### Primena Complex Event Processing-a (CEP)
-*CEP* bi u našem sistemu imao svrhu da prepozna obrasce događaja kroz više poteza i reaguje na njih. Na primer:
-- Ako u toku iste runde više igrača ciljaju istu boju, sistem detektuje „konflikt oko resursa“ i može da predloži da naš agent uzme sve te pločice, kako bi sebi obezbedio prednost i istovremeno blokirao protivnika.
-- Ako se tokom više rundi ponavlja obrazac da agent ostavlja nepovoljnu količinu pločica u centru (npr. često „gura“ višak pločica protivnicima), sistem može da prepozna taj trend i promeni heuristiku, tako da agent ubuduće izbegava poteze koji daju protivnicima očiglednu prednost.
+#### Forward chaining
 
-Na ovaj način CEP omogućava da agent ne reaguje samo na trenutno stanje, već i na tok igre i interakcije među igračima.
+Možemo posmatrati pravila na dva načina, ona koja imaju u obzir kratkoročnu nagradu (taktika) i ona koja imaju u obzir dugoročnu nagradu (strategija). Sa time u vidu, implementirali bi jedan dugačak lanac pravila koji bi neformalno bio podeljen na dva dela:
+1. Taktika:
+	- Završavanje reda (ogroman plus)
+ 	- Kaznena linija (minus)
+  	- Blokiranje protivnika (velik plus)
+   	- Ako potez završava red i u velikoj smo prednosti u odnosu na protivnika (ogroman plus)
+   	- ...
+2. Strategija:
+   	- Dodaje pločicu u red koja je blizu da dovede do bonus poena (velik plus)
+   	- Dodaje pločice u centar koje će naterati protivnika da mu određen broj pločica upadnu u minus (mali plus)
+   	- Popunjujemo red bez ikakve kazne (srednji plus)
+   	- Pločica/ce popunjuje najduži red (velik plus)
+   	- ...
+  
+#### CEP
 
-#### Primeri pravila
+Kao što smo prethodno napomenuli, postoje obrasci koje možemo posmatrati u toku igre. Konkretno bi implementirali *log* svih poteza u rundi koji bi se posmatrao tokom svakog poteza kako bi dodali bodove određenim (potencijalnim) potezima ili ih oduzeli. Postoji različiti obrasci koje možemo posmatrati, ali konkretno bi implementirali sledeće:
 
-- Pravilo 1: Ako u fabrici postoje pločice boje X i u našem redu nedostaje tačno toliko pločica → potez dobija visok prioritet.
-- Pravilo 2: Ako uzimanje pločica boje X vodi do popunjavanja reda poda → potez dobija nizak prioritet.
-- Pravilo 3: Ako uzimanjem pločica boje X protivnik ne može da završi svoj red → potez dobija dodatnu vrednost.
-- Pravilo 4: Ako postoji izbor između poteza koji završava red i poteza koji započinje novu kolonu, a oba daju isti broj bodova → prioritet ima potez koji vodi ka formiranju bonus poena (kolona, svih pet boja).
+1. Konflikt oko resursa
+	- Ako svi ili većina igrača uzima istu boju pločica, daj veći prioritet potezima koji isto oduzimaju te boje od drugih (srednji plus)
+2. Propadanje pločica
+   	- Ako u poslednjih X rundi niko ne uzima pločice iz sredine, daj veći prioritet potezima koji uzimaju pločice iz sredine (srednji plus)
+3. Kraj igre
+   	- Ako je protivnik (ili mi kao igrač) doveo igru u poslednju rundu, daj prioritet potezima koji donose najveći broj poena, u suštini zanemari strategiju, samo taktiku uzimaj u obzir
+  
+#### Backwards chaining
+
+Dugoročni ciljevi variraju u zavisnosti od toga koliko rundi se već odigralo, koja je veština protivnika, subjektivnog mišljenja igrača koja je najbolja strategija za pobeđivanje u igri i samog toga igre. Sa time u vidu, implementiraćemo različite dugoročne ciljeve sistema koje ćemo uključivati/isključivati. Sa obzirom da jedna runda sadrži više poteza igrača, na kraju runde je idealna prilika da evaluiramo naš dugoročni cilj i promenimo ga po potrebi; takođe CEP bi bio jedan od okidača za menjanje cilja. Backwards chain modul je taj koji na kraju presudi koji je najbolji potez na osnovu našeg cilja. Ciljeve koje bi razmatrali za izradu su sledeći:
+
+1. Završavanje kolone u najmanjem broju poteza
+2. Završavanje svih 5 polja iste boje
+3. Maksimizacija naših bodova
+4. Minimizacija protivnikovih bodova
+5. Imanje što više različitih boja u šemi za pločice
+
+Formalno, svaki od ovih strategija bi znatno povećala vrednost poteza koji ispunjavaju cilj, ostali potezi će ostati bez promene prioriteta.
+
+Za kraj uzimamo potez koji ima najveći score nakon svih obrada i evaluacija. U slučaju da više njih ima isti score, rangiraćemo pločice po tome koje su nam najlepše i njima dati prioritet. Ako opet imamo isti score, izabraćemo nasumično.
 
 #### Ulaz programa
 - Stanje table svakog od igrača
@@ -68,6 +105,7 @@ Na ovaj način CEP omogućava da agent ne reaguje samo na trenutno stanje, već 
 	- Šema za pločice
 	- Red poda
 - Stanje fabrika i centra stola
+- Log svih poteza odigranih u rundi
 - Broj igrača
 #### Izlaz programa
 - Predlog poteza
@@ -79,9 +117,40 @@ Na ovaj način CEP omogućava da agent ne reaguje samo na trenutno stanje, već 
   
 - - -
 ### Rezonovanje konkretnog primera
-1. Sistem dobija stanje: u fabrici A ima 3 plave pločice, u fabrici B 2 crvene, u centru 1 žuta i 2 crne.
-2. Znanje: igrač trenutno ima nedovršen red od 3 plave pločice, pa mu fali još 2 da završi, takođe do sada igrač nema ni jednu pločicu u redu poda.
-3. Pravilo: ako postoji mogućnost da se završi red → potez ima visoku prioritetnu vrednost.
-4. Forward chaining: sistem identifikuje da uzimanje 3 plave pločice iz fabrike A omogućava završetak reda.
-5. Backward chaining: sistem proverava cilj „maksimizacija bodova u ovom krugu“ i zaključuje da je potez konzistentan sa tim ciljem.
-6. Output: „Uzmi 3 plave pločice iz fabrike A, i stavi u red 5, zato što ćeš završiti taj red, iako će ti 1 pločica oduzeti 1 bod.“.
+
+1. **Stanje igre**  
+   - Fabrika A: 2 crvene pločice  
+   - Fabrika B: 3 plave pločice  
+   - Centar: 1 žuta i 1 crna pločica  
+   - Igrač: red 3 (od 5) već ima 2 plave pločice, red poda je prazan  
+   - Protivnik: skoro popunjen horizontalni red sa 4 crvene pločice  
+
+2. **Forward Chaining** generiše sve legalne poteze:  
+   - Uzmi 3 plave pločice iz fabrike B  
+   - Uzmi 2 crvene pločice iz fabrike A  
+   - Uzmi 1 žutu pločicu iz centra  
+   - Uzmi 1 crnu pločicu iz centra  
+
+3. **Forward Chaining evaluacija**:  
+   - 3 plave → završava red, visok trenutni poen  
+   - 2 crvene → ne završava red, blokira protivnika, srednji poen  
+   - 1 žuta → ne završava red, legalan potez, nizak poen  
+   - 1 crna → ne završava red, legalan potez, nizak poen  
+
+4. **CEP Layer** detektuje obrasce:  
+   - Protivnik skoro završava crveni red → potez 2 crvene dobija dodatni prioritet (blokada)  
+   - Nema konflikta u centru → žuta i crna ne dobijaju dodatne modifikacije  
+
+5. **Backward Chaining evaluacija** (dugoročni ciljevi):  
+   - Cilj: maksimizacija poena + blokiranje protivnika + više boja na tabli  
+   - 3 plave → doprinos trenutnom poenu, ali ne blokira protivnika  
+   - 2 crvene → blokira protivnika, srednji trenutni poen → ukupni score veći zbog strateškog cilja  
+   - 1 žuta → nova boja na tabli, mali dodatak score-a  
+   - 1 crna → slično kao žuta, mali dodatak score-a  
+
+6. **Finalna odluka**  
+   - Nakon modifikacije score-a kroz Forward Chaining, CEP i Backward Chaining, **potez sa 2 crvene pločice iz fabrike A dobija najveći ukupni score**.  
+   - Output:  
+     > „Uzmi 2 crvene pločice iz fabrike A i stavi ih u red poda 1, zato što time blokira protivnika da završi red i balansira naš dugoročni cilj maksimizacije poena u sledećim rundama.“  
+
+---
