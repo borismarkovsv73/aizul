@@ -47,7 +47,7 @@ Sistem je podeljen u tri koherentna sloja koji rade zajedno:
 	- Izlaz: lista mogućih poteza sa score-om (Move objekti).
 
 2. CEP Layer
-- Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velik broj pločica u centarlnu fabriku, kraj igre...).
+- Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velik broj pločica u centralnu fabriku, kraj igre...).
   
 	- Ulaz: lista poteza i događaja iz runde (log).
 	- Izlaz: modifikacija score-a poteza, ne bira potez direktno.
