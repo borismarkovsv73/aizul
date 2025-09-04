@@ -23,7 +23,7 @@ Ukratko, pravila igre su sledeća:
 
 - Igra traje dok neki igrač ne popuni jedan horizontalni red na svom zidu. Nakon toga sledi završno bodovanje – dodatni poeni se dobijaju za kompletne redove, kolone ili svih pet pločica iste boje. Pobednik je igrač sa najviše osvojenih poena.
 
-![Prikaz jednog stanja igre](slika1.png)
+![Prikaz jednog stanja igre](assets/slika1.png)
 *Slika 1 - Prikaz jednog stanja table igrača*
 
 Nalik šahu, pravila igre su prilično jednostavna, međutim postoji bezbroj različitih strategija za igranje i odabir najboljeg poteza može biti vrlo kompleksan. Sa time, želimo da napravimo agenta sa osnovnom funkcionalnošću da odredi najbolji mogući potez u datom stanju table.
@@ -47,7 +47,7 @@ Sistem je podeljen u tri koherentna sloja koji rade zajedno:
 	- Izlaz: lista mogućih poteza sa score-om (Move objekti).
 
 2. CEP Layer
-- Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velik broj pločica u centralnu fabriku, kraj igre...).
+- Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velikog broja pločica u centralnu fabriku, kraj igre...).
   
 	- Ulaz: lista poteza i događaja iz runde (log).
 	- Izlaz: modifikacija score-a poteza, ne bira potez direktno.
@@ -71,7 +71,7 @@ Možemo posmatrati pravila na dva načina, ona koja imaju u obzir kratkoročnu n
    	- Dodaje pločicu u red koja je blizu da dovede do bonus poena (velik plus)
    	- Dodaje pločice u centar koje će naterati protivnika da mu određen broj pločica upadnu u minus (mali plus)
    	- Popunjujemo red bez ikakve kazne (srednji plus)
-   	- Pločica/ce popunjuje najduži red (velik plus)
+   	- Pločica/ce popunjuje/ju najduži red (velik plus)
    	- ...
   
 #### CEP
@@ -95,7 +95,7 @@ Dugoročni ciljevi variraju u zavisnosti od toga koliko rundi se već odigralo, 
 4. Minimizacija protivnikovih bodova
 5. Imanje što više različitih boja u šemi za pločice
 
-Formalno, svaki od ovih strategija bi znatno povećala vrednost poteza koji ispunjavaju cilj, ostali potezi će ostati bez promene prioriteta.
+Formalno, svaka od ovih strategija bi znatno povećala vrednost poteza koji ispunjavaju cilj, ostali potezi će ostati bez promene prioriteta.
 
 Za kraj uzimamo potez koji ima najveći score nakon svih obrada i evaluacija. U slučaju da više njih ima isti score, rangiraćemo pločice po tome koje su nam najlepše i njima dati prioritet. Ako opet imamo isti score, izabraćemo nasumično.
 
