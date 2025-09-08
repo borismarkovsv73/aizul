@@ -99,6 +99,239 @@ Formalno, svaka od ovih strategija bi znatno povećala vrednost poteza koji ispu
 
 Za kraj uzimamo potez koji ima najveći score nakon svih obrada i evaluacija. U slučaju da više njih ima isti score, rangiraćemo pločice po tome koje su nam najlepše i njima dati prioritet. Ako opet imamo isti score, izabraćemo nasumično.
 
+### Prvi backward chain
+
+### Glavni cilj : **Maksimizacija ukupnih poena**
+---
+##### Podciljevi
+1. Završavanje boja  
+2. Završavanje redova  
+3. Završavanje kolona  
+---
+#### 1. Završavanje boja
+**Opis**: Ako uspeš da popuniš svih 5 polja iste boje na tabli, dobijaš **+10 poena na kraju igre**. Ovo je dugoročna strategija.
+
+**Lanac zaključivanja unazad**:
+- *Cilj*: Završiti boju (npr. plavu).
+  - **Provera izvodljivosti**
+    - Da li u odbačenim postoji dovoljan broj pločica te boje da se završi svih 5?
+    - Ako ne → odbaciti strategiju.
+  - **Mogućnosti postavljanja**
+    - U kojim redovima ta boja još nedostaje?
+    - Koliko trenutno donosi poena kada se ubaci? (bodovi suseda)
+  - **Sinergije**
+    - Da li postavljanje tog polja istovremeno završava red (+2)?
+    - Da li time doprinosi završavanju kolone (+7)?
+    - Da li pravi dobar lanac suseda za susedne poene?
+---
+#### 2. Završavanje redova
+**Opis**: Ako popuniš ceo red, dobijaš **+2 poena na kraju igre**. Ovo je lakše dostižno nego završavanje boje ili kolone
+**Backward chain**:
+- *Cilj*: Završiti red (npr. red 3).
+  - **Provera izvodljivosti**
+    - Koje boje još nedostaju u tom redu?
+    - Da li su te boje realno dostupne do kraja partije?
+  - **Trenutna vrednost poteza**
+    - Ako postavim ovde sada, koliko dobijam poena od suseda?
+    - Da li ovaj potez istovremeno spaja više polja i daje lančane poene?
+  - **Sinergije**
+    - Da li završetak reda doprinosi završavanju neke kolone?
+    - Da li istovremeno vodi i ka završavanju boje?
+  - **Rizik**
+    - Da li gubim poene ovim potezom i ako da koliko ih gubim?
+  - **Taktika**
+    - Da li završavanjem ovog reda želim da završim celu igru, da li imam više bodova od protivnika?
+
+---
+
+#### 3. Završavanje kolona
+**Opis**: Ako popuniš celu kolonu, dobijaš **+7 poena na kraju igre**. Ovo je teže, jer zahteva svih 5 različitih boja u toj koloni, ali zato donosi veću nagradu.
+
+**Backward chain**:
+- *Cilj*: Završiti kolonu (npr. kolona 4).
+  - **Provera izvodljivosti**
+    - Koliko boja već stoji u toj koloni?
+    - Koliko različitih boja nedostaje?
+  - **Trenutna vrednost poteza**
+    - Koliko poena trenutno dobijam ako stavim pločicu u ovu kolonu?
+    - Da li tim potezom zatvaram neki red (+2)?
+  - **Krajnji bonus i sinergija**
+    - Ako uspem, dobijam +7.
+    - Istovremeno svaki ubačeni element pomera i boju ka završavanju boje.
+  - **Rizik**
+    - Da li gubim poene ovim potezom i ako da koliko ih gubim?
+
+```mermaid
+mindmap
+  root((Maksimizacija poena))
+    "Završavanje boja"
+      "Cilj: Završiti boju"
+      "Provera izvodljivosti"
+        "Da li u odbačenim postoji dovoljan broj pločica te boje"
+        "Ako ne, odbaciti strategiju"
+      "Mogućnosti postavljanja"
+        "U kojim redovima ta boja još nedostaje"
+        "Koliko trenutno donosi poena kada se ubaci"
+      "Sinergije"
+        "Da li postavljanje istovremeno završava red"
+        "Da li doprinosi završavanju kolone"
+        "Pravi dobar lanac suseda za poene"
+    "Završavanje redova"
+      "Cilj: Završiti red"
+      "Provera izvodljivosti"
+        "Koje boje još nedostaju u tom redu"
+        "Da li su te boje realno dostupne do kraja partije"
+      "Trenutna vrednost poteza"
+        "Ako postavim ovde sada, koliko dobijam poena od suseda"
+        "Da li potez spaja više polja i daje lančane poene"
+      "Sinergije"
+        "Da li završetak reda doprinosi završavanju kolone"
+        "Da li vodi ka završavanju boje"
+      "Rizik"
+        "Da li gubim poene ovim potezom i koliko"
+      "Taktika"
+        "Da li završavanjem ovog reda želim da završim celu igru"
+        "Da li imam više bodova od protivnika"
+    "Završavanje kolona"
+      "Cilj: Završiti kolonu"
+      "Provera izvodljivosti"
+        "Koliko boja već stoji u toj koloni"
+        "Koliko različitih boja nedostaje"
+      "Trenutna vrednost poteza"
+        "Koliko poena dobijam ako stavim pločicu u kolonu"
+        "Da li zatvaram neki red"
+      "Krajnji bonus i sinergija"
+        "Ako uspem, dobijam bonus poene"
+        "Svaka ubačena pločica pomera boju ka završavanju boje"
+      "Rizik"
+        "Da li gubim poene ovim potezom i koliko"
+```
+   
+    
+### Drugi backward chain
+
+### Glavni cilj
+**Minimizovati ukupne poene protivnika**
+
+#### Podciljevi
+1. Sprečiti **završavanje boje** (−10 za protivnika)  
+2. Sprečiti **završavanje kolone** (−7)  
+3. Sprečiti **završavanje reda** (−2)  
+4. **Izazvati kaznene poene**
+5. **Pokvariti tempo i tok runde** (manipulacija fabrikama/discardom, prvi igrač)
+
+---
+
+#### 1) Blokiranje završetka **boje**
+
+**Cilj:** Onemogućiti da protivnik skupi svih 5 pločica iste boje do kraja igre (**−10** za njega).
+
+**Lanac unazad:**
+- **Detekcija pretnje**
+  - Da li protivniku fali manje od 2 pločice iste boje do kompleta?
+  - Na tabli/fabrikama postoje te pločice ove runde?
+  - Da li je realno da ih uzme pre mene (redosled, broj igrača)?
+- **Mogućnosti blokiranja**
+  - Mogu li uzeti *upravo tu boju* dovoljno rano da ih razbijem na više gomila ili ih potpuno uklonim sa tržišta?
+  - Mogu li *namerno* pokupiti višak te boje i uzeti kaznu, ali kupiti vreme?
+- **Procena troška**
+  - Koliki je moj trošak naspram sprečenih **10** poena?
+- **Akcija**
+  - Ako je sprečavanje bitnije od sopstvenog gubitka, uzmi boju.
+---
+
+#### 2) Blokiranje završetka **kolone**
+
+**Cilj:** Sprečiti kolonu (−7).
+
+**Lanac unazad:**
+- **Detekcija pretnje**
+  - Koliko polja nedostaje protivniku u koloni?
+  - Koje **različite** boje su potrebne i da li su na tržištu ove runde?
+- **Mogućnosti blokiranja**
+  - Uzmi jednu od neophodnih boja za tu kolonu **pre** protivnika.
+  - Usmeri tržište tako da te boje odu u centar, povećavajući kazneni rizik.
+- **Procena troška**
+  - Vrednost sprečenih 7 poena protiv moje trenutne vrednosti poteza.
+- **Akcija**
+  - Prvenstvo imaju boje koje su **retke u rundi** (manja verovatnoća da se ponove kasnije).
+---
+
+#### 3) Blokiranje završetka **reda**
+
+**Cilj:** Sprečiti red (−2), često taktički u završnici runde.
+
+**Lanac unazad:**
+- **Detekcija pretnje**
+  - Da li protivniku fali **samo 1 pločica** da završi red?
+  - Da li ta pločica donosi i dobre bodove suseda?
+- **Mogućnosti blokiranja**
+  - Uzmite tu boju ili razbijte paket u fabrici da mu se uslovi promene.
+  - Ako je kasna runda – omogućite da mu ostane loš izbor.
+- **Procena troška**
+  - Sprečeni bodovi protiv naše vrednosti poteza.
+- **Akcija**
+  - Blokiraj pre svega redove koji mu otvaraju **kolonu** ili **boju**.
+---
+
+#### 4) Izazivanje **kaznenih poena**
+
+**Cilj:** Naterati protivnika da **prelije** i dobije minus poene.
+
+**Lanac unazad:**
+- **Detekcija ranjivosti**
+  - Protivnik ima skoro popunjene pripremne redove za više boja
+  - Koliko mu je prostora ostalo bezbedno?
+- **Manipulacija tržištem**
+  - Gurnuti *više istih boja* u centar.
+- **Tajming**
+  - Ako će protivnik igrati **posle mene** i **mora** uzeti određenu boju → rizik kazne raste.
+- **Akcija**
+  - Birati poteze koji maksimalizuju verovatnoću da **mora** uzeti “prevelik” paket.
+---
+#### 5) **Tempo** i tok runde (fabrike, centralni pool, prvi igrač)
+
+**Cilj:** Pokvariti planiranje protivnika kroz redosled i sadržaj poteza.
+
+**Lanac unazad:**
+- **Kontrola prvog igrača**
+  - Da li uzimanjem **prvog igrača** (žetona) mogu da:
+    - Uđem pre njega u ključnu boju u sledećoj rundi?
+    - Nametnem ranu blokadu boje/kolone?
+- **Oblikovanje tržišta**
+  - Razbij grupe koje su dobar potez protivniku i prebaci “neprijatne” boje u centar.
+- **Kombinovanje sa kaznama**
+  - Pusti da u centru narastu grupe koje njemu kvare raspored.
+ 
+```mermaid
+mindmap
+  root((Minimizacija protivničkih poena))
+    Boja
+      "Detekcija pretnje"
+      "Mogućnosti blokiranja"
+      "Procena troška"
+      "Akcija"
+    Kolona
+      "Detekcija pretnje"
+      "Mogućnosti blokiranja"
+      "Procena troška"
+      "Akcija"
+    Red
+      "Detekcija pretnje"
+      "Mogućnosti blokiranja"
+      "Procena troška"
+      "Akcija"
+    Kazne
+      "Detekcija ranjivosti"
+      "Manipulacija tržištem"
+      "Tajming"
+      "Akcija"
+    Tempo
+      "Kontrola prvog igrača"
+      "Oblikovanje tržišta"
+      "Kombinovanje sa kaznama"
+```
+
 #### Ulaz programa
 - Stanje table svakog od igrača
 	- Zid
