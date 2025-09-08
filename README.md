@@ -82,15 +82,15 @@ U našem sistemu implementiraćemo dva CEP modula koji prate obrasce u toku igre
    - **Tip događaja:** punctual event (posmatramo svaki potez, simuliramo vremenski tok)  
    - **Opis:** prati koje boje pločica traže svi igrači u trenutnom potezu.  
    - **Cilj:** povećati vrednost poteza koji **oduzimaju boje od protivnika** ili biraju boje koje su tražene od više igrača.  
-   - **Windowing:** sliding window sa dužinom od 1 poteza (diskretno) – formalno simuliramo vremenski okvir.  
+   - **Windowing:** sliding window *length-based* poslednjih 2n poteza (n-broj igrača).
    - **Evaluacija:** diskretna, score se odmah modifikuje za taj potez.  
    - **Clock:** runtime clock, reaguje na svaki potez.
 
 2. **OmetajućeBiranje (InterfearingChoiceCEP)**  
    - **Tip događaja:** interval event (posmatra se cela runda, simuliramo interval vremena)  
    - **Opis:** prati koliko puta je igrač tokom runde uzimao svaku boju pločica.  
-   - **Cilj:** povećati vrednost **bojama koje igrač još nije završio** a protivnik ih često uzima
-   - **Windowing:** interval-based, cela runda = interval (diskretno, formalno kao vremenski prozor)  
+   - **Cilj:** povećati vrednost **bojama koje igrač još nije završio** a protivnik ih često uzima.
+   - **Windowing:** sliding window *time-based*, cela runda je jedan interval (diskretno, formalno kao vremenski prozor)  
    - **Evaluacija:** diskretna, score modifikovan nakon svake runde  
    - **Clock:** runtime clock, evaluacija se dešava na kraju runde  
 
