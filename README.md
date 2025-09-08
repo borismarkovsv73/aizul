@@ -375,11 +375,11 @@ mindmap
    - Nema konflikta u centru → žuta i crna ne dobijaju dodatne modifikacije  
 
 5. **Backward Chaining evaluacija** (dugoročni ciljevi):  
-   - Cilj: maksimizacija poena + blokiranje protivnika + više boja na tabli  
-   - 3 plave → doprinos trenutnom poenu, ali ne blokira protivnika  
-   - 2 crvene → blokira protivnika, srednji trenutni poen → ukupni score veći zbog strateškog cilja  
-   - 1 žuta → nova boja na tabli, mali dodatak score-a  
-   - 1 crna → slično kao žuta, mali dodatak score-a  
+   - Cilj: maksimizacija poena + blokiranje protivnika
+   - 3 plave → maksimizacija poena -> treba mi plavih da zavrsim boju -> ima 3 plave, mogu da zavrsim red -> nemam dodatnih sinergija -> blokiranje protivnika -> plava ga ne utice uopste
+   - 2 crvene → maksimizacija poena -> crvena nam ne pomaze da zavrsimo niti red, niti boju, niti kolonu -> blokiranje protivnika -> protivniku treba crvenih da zavrsi red -> postoji crvenih da se zavrsi red -> nama nije minus -> veliki prioritet
+   - 1 žuta → maksimizacija poena -> zuta nam ne pomaze da zavrsimo niti red, niti boju,niti kolonu -> blokiranje protivnika -> protivniku ne treba zuta da zavrsi niti red niti kolonu niti boju
+   - 1 crna → isti primer kao i zuta
 
 6. **Finalna odluka**  
    - Nakon modifikacije score-a kroz Forward Chaining, CEP i Backward Chaining, **potez sa 2 crvene pločice iz fabrike A dobija najveći ukupni score**.  
