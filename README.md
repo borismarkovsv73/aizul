@@ -214,9 +214,9 @@ mindmap
 **Minimizovati ukupne poene protivnika**
 
 #### Podciljevi
-1. Sprečiti **završavanje boje** (−10 za protivnika)  
-2. Sprečiti **završavanje kolone** (−7)  
-3. Sprečiti **završavanje reda** (−2)  
+1. Sprečiti **završavanje boje** (+10)  
+2. Sprečiti **završavanje kolone** (+7)  
+3. Sprečiti **završavanje reda** (+2)  
 4. **Izazvati kaznene poene**
 5. **Pokvariti tempo i tok runde** (manipulacija fabrikama/discardom, prvi igrač)
 
@@ -224,7 +224,7 @@ mindmap
 
 #### 1) Blokiranje završetka **boje**
 
-**Cilj:** Onemogućiti da protivnik skupi svih 5 pločica iste boje do kraja igre (**−10** za njega).
+**Cilj:** Onemogućiti da protivnik skupi svih 5 pločica iste boje do kraja igre (**+10**).
 
 **Lanac unazad:**
 - **Detekcija pretnje**
@@ -242,7 +242,7 @@ mindmap
 
 #### 2) Blokiranje završetka **kolone**
 
-**Cilj:** Sprečiti kolonu (−7).
+**Cilj:** Sprečiti kolonu (+7).
 
 **Lanac unazad:**
 - **Detekcija pretnje**
@@ -259,7 +259,7 @@ mindmap
 
 #### 3) Blokiranje završetka **reda**
 
-**Cilj:** Sprečiti red (−2), često taktički u završnici runde.
+**Cilj:** Sprečiti red (+2), često taktički u završnici runde.
 
 **Lanac unazad:**
 - **Detekcija pretnje**
@@ -299,7 +299,7 @@ mindmap
     - Uđem pre njega u ključnu boju u sledećoj rundi?
     - Nametnem ranu blokadu boje/kolone?
 - **Oblikovanje tržišta**
-  - Razbij grupe koje su dobar potez protivniku i prebaci “neprijatne” boje u centar.
+  - Razbij grupe koje su dobar potez protivniku i prebaci protivniku neželjene boje u centar.
 - **Kombinovanje sa kaznama**
   - Pusti da u centru narastu grupe koje njemu kvare raspored.
  
