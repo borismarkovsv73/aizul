@@ -49,7 +49,7 @@ Sistem je podeljen u tri koherentna sloja koji rade zajedno:
 2. CEP Layer
 - Praćenje globalnih obrazaca u toku igre (konflikt oko resursa, padanje velikog broja pločica u centralnu fabriku, kraj igre...).
   
-	- Ulaz: lista poteza i događaja iz runde (log).
+	- Ulaz: lista poteza, događaja iz runde (log) i stanje table.
 	- Izlaz: modifikacija score-a poteza, ne bira potez direktno.
 
 3. Backward Chaining Layer
@@ -73,17 +73,31 @@ Možemo posmatrati pravila na dva načina, ona koja imaju u obzir kratkoročnu n
    	- Popunjujemo red bez ikakve kazne (srednji plus)
    	- Pločica/ce popunjuje/ju najduži red (velik plus)
    	- ...
-  
-#### CEP
 
-Kao što smo prethodno napomenuli, postoje obrasci koje možemo posmatrati u toku igre. Konkretno bi implementirali *log* svih poteza u rundi koji bi se posmatrao tokom svakog poteza kako bi dodali bodove određenim (potencijalnim) potezima ili ih oduzeli. Postoji različiti obrasci koje možemo posmatrati, ali konkretno bi implementirali sledeće:
+#### CEP (Complex Event Processing)
 
-1. Konflikt oko resursa
-	- Ako svi ili većina igrača uzima istu boju pločica, daj veći prioritet potezima koji isto oduzimaju te boje od drugih (srednji plus)
-2. Propadanje pločica
-   	- Ako u poslednjih X rundi niko ne uzima pločice iz sredine, daj veći prioritet potezima koji uzimaju pločice iz sredine (srednji plus)
-3. Kraj igre
-   	- Ako je protivnik (ili mi kao igrač) doveo igru u poslednju rundu, daj prioritet potezima koji donose najveći broj poena, u suštini zanemari strategiju, samo taktiku uzimaj u obzir
+U našem sistemu implementiraćemo dva CEP modula koji prate obrasce u toku igre i modifikuju score poteza:
+
+1. **KonfliktResursa (ResourceConflictCEP)**  
+   - **Tip događaja:** punctual event (posmatramo svaki potez, simuliramo vremenski tok)  
+   - **Opis:** prati koje boje pločica traže svi igrači u trenutnom potezu.  
+   - **Cilj:** povećati vrednost poteza koji **oduzimaju boje od protivnika** ili biraju boje koje su tražene od više igrača.  
+   - **Windowing:** sliding window sa dužinom od 1 poteza (diskretno) – formalno simuliramo vremenski okvir.  
+   - **Evaluacija:** diskretna, score se odmah modifikuje za taj potez.  
+   - **Clock:** runtime clock, reaguje na svaki potez.
+
+2. **OmetajućeBiranje (InterfearingChoiceCEP)**  
+   - **Tip događaja:** interval event (posmatra se cela runda, simuliramo interval vremena)  
+   - **Opis:** prati koliko puta je igrač tokom runde uzimao svaku boju pločica.  
+   - **Cilj:** povećati vrednost **bojama koje igrač još nije završio** a protivnik ih često uzima
+   - **Windowing:** interval-based, cela runda = interval (diskretno, formalno kao vremenski prozor)  
+   - **Evaluacija:** diskretna, score modifikovan nakon svake runde  
+   - **Clock:** runtime clock, evaluacija se dešava na kraju runde  
+
+**Napomena:**  
+- Prvi CEP (**KonfliktResursa**) daje prioritet kratkoročnim potezima, dok drugi CEP (**SekvencaBoja**) daje strategijski prioritet za celu rundu.  
+- Formalno prikazujemo vremenski tok (pojedinačni potezi i interval runde) kako bismo zadovoljili koncept CEP-a, ali u praksi se koristi samo diskretna analiza poteza i runde.  
+- Obe evaluacije se primenjuju pre backward chaining modula, koji filtrira poteze prema dugoročnim ciljevima.
   
 #### Backwards chaining
 
@@ -123,7 +137,8 @@ Za kraj uzimamo potez koji ima najveći score nakon svih obrada i evaluacija. U 
    - Fabrika B: 3 plave pločice  
    - Centar: 1 žuta i 1 crna pločica  
    - Igrač: red 3 (od 5) već ima 2 plave pločice, red poda je prazan  
-   - Protivnik: skoro popunjen horizontalni red sa 4 crvene pločice  
+   - Protivnik: skoro popunjen horizontalni red sa 4 crvene pločice
+   - Log: protivnik je u poslednja dva poteza oba puta uzeo crvenu pločicu, a u prošloj rundi je najčešće uzimao plavu
 
 2. **Forward Chaining** generiše sve legalne poteze:  
    - Uzmi 3 plave pločice iz fabrike B  
@@ -138,8 +153,10 @@ Za kraj uzimamo potez koji ima najveći score nakon svih obrada i evaluacija. U 
    - 1 crna → ne završava red, legalan potez, nizak poen  
 
 4. **CEP Layer** detektuje obrasce:  
-   - Protivnik skoro završava crveni red → potez 2 crvene dobija dodatni prioritet (blokada)  
-   - Nema konflikta u centru → žuta i crna ne dobijaju dodatne modifikacije  
+   - Ako je većina igrača uzelo istu pločicu u poslednih 2n rundi (n-broj igrača) povećaj vrednost poteza te boje, dodajemo srednji poen
+     	- Protivnik je uzeo crvenu pločicu dvaput u poslednje dve runde, povećaj vrednost poteza uzimanje dve crvene pločice
+   - Ako je protivnik u prošloj rundi najčešće birao određenu boju, povećaj vrednost te boje u ovoj rundi
+     	- Protivnik je u prošloj rundi najčešće uzimao plavu, tako da povećavamo vrednost poteza gde biramo plavu, dodajemo nizak poen
 
 5. **Backward Chaining evaluacija** (dugoročni ciljevi):  
    - Cilj: maksimizacija poena + blokiranje protivnika + više boja na tabli  
