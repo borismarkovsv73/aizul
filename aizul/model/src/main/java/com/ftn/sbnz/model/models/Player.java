@@ -1,6 +1,8 @@
 package com.ftn.sbnz.model.models;
 
-public class Player {
+import java.io.Serializable;
+
+public class Player implements Serializable{
     private Long id;
     private Board board;
     private int score;
