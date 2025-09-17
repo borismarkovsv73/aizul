@@ -1,0 +1,16 @@
+{
+    "id": 1,
+    "factoryId": 1,
+    "takenTiles": [
+        {
+            "id": 1,
+            "color": "red"
+        },
+        {
+            "id": 3,
+            "color": "red"
+        }
+    ],
+    "targetRow": 0,
+    "score": 0
+}
