@@ -44,8 +44,8 @@ public class ScenarioController {
 	}
 
 	@GetMapping("/rule_1")
-	public GameState rule_1() throws Exception {
-		GameState primer = sampleService.rule_1();
+	public Move rule_1() throws Exception {
+		Move primer = sampleService.rule_1();
 		return primer;
 	}
 
