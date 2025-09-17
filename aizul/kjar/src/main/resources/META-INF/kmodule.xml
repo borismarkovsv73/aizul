@@ -5,4 +5,7 @@
   <kbase name="otherBase" packages="rules.other">
     <ksession name="otherSession"/>
   </kbase>
+  <kbase name="rule2Base" packages="rules.two">
+    <ksession name="ruleSession2"/>
+  </kbase>
 </kmodule>

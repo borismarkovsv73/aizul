@@ -1,6 +1,7 @@
 package com.ftn.sbnz.service;
 
 import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Player; // Change to your actual entity import
 import com.ftn.sbnz.model.utils.JsonLoader;
 
@@ -44,7 +45,13 @@ public class ScenarioController {
 
 	@GetMapping("/rule_1")
 	public GameState rule_1() throws Exception {
-		GameState primer = sampleService.ruleGojko();
+		GameState primer = sampleService.rule_1();
+		return primer;
+	}
+
+	@GetMapping("/rule_2")
+	public Move rule_2() throws Exception {
+		Move primer = sampleService.rule_2();
 		return primer;
 	}
 }
