@@ -5,12 +5,29 @@
             "id": 1,
             "board": {
                 "id": 1,
-                "rows": [
-                    [null, null, null, null, null],
-                    [null, null, null, null],
-                    [null, null, null],
+                "rows": [      
+                    [null],
                     [null, null],
-                    [null]
+                    [null, null, null],
+                    [null, null, null, null],
+                    [
+                        {
+                        "id": 11,
+                        "color": "red"
+                    },
+                    {
+                        "id": 12,
+                        "color": "red"
+                    }, 
+                    {
+                        "id": 13,
+                        "color": "red"
+                    }, 
+                    {
+                        "id": 14,
+                        "color": "red"
+                    }, 
+                    null]
                 ],
                 "wall": [[null, null, null, null, null],
                          [null, null, null, null, null],
@@ -26,11 +43,11 @@
             "board": {
                 "id": 2,
                 "rows": [
-                    [null, null, null, null, null],
-                    [null, null, null, null],
-                    [null, null, null],
+                    [null],
                     [null, null],
-                    [null]
+                    [null, null, null],
+                    [null, null, null, null],
+                    [null, null, null, null, null]
                 ],
                 "wall": [[null, null, null, null, null],
                          [null, null, null, null, null],
