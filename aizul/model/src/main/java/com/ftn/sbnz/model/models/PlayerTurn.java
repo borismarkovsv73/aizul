@@ -8,18 +8,19 @@ public class PlayerTurn {
     private Board newBoardState;
     private List<Factory> factoriesState;
     private Move move;
-    private int score;
+    private String explanation;
+
 
     public PlayerTurn() {
     }
 
-    public PlayerTurn(Long id, Long playerId, Board newBoardState, List<Factory> factoriesState, Move move, int score) {
+    public PlayerTurn(Long id, Long playerId, Board newBoardState, List<Factory> factoriesState, Move move, String explanation) {
         this.id = id;
         this.playerId = playerId;
         this.newBoardState = newBoardState;
         this.factoriesState = factoriesState;
         this.move = move;
-        this.score = score;
+        this.explanation = explanation;
     }
 
     public Long getId() {
@@ -62,11 +63,11 @@ public class PlayerTurn {
         this.move = move;
     }
 
-    public int getScore() {
-        return score;
+    public String getExplanation() {
+        return explanation;
     }
 
-    public void setScore(int score) {
-        this.score = score;
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
     }
 }

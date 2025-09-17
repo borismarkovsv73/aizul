@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.kie.api.runtime.rule.AgendaFilter;
 import org.kie.api.runtime.rule.Match;
-
+import com.ftn.sbnz.model.utils.JsonLoader;
+import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.utils.JsonLoader;
 
 
 @Service
@@ -32,5 +34,10 @@ public class SampleAppService {
 		kieSession.fireAllRules();
 		kieSession.dispose();
 		return i;
+	}
+
+	public GameState rule_1() throws Exception{
+		GameState gameState = JsonLoader.loadGameState("service/src/main/resources/boardstate.json");
+		return gameState;
 	}
 }

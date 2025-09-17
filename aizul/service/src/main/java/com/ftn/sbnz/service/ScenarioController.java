@@ -41,4 +41,10 @@ public class ScenarioController {
 		GameState gameState = JsonLoader.loadGameState("service/src/main/resources/boardstate.json");
 		return gameState;
 	}
+
+	@GetMapping("/rule_1")
+	public GameState rule_1() throws Exception {
+		GameState primer = sampleService.ruleGojko();
+		return primer;
+	}
 }
