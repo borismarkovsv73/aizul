@@ -1,5 +1,8 @@
 <kmodule xmlns="http://www.drools.org/xsd/kmodule">
-    <kbase name="rules" packages="rules">
-        <ksession name="ksession-rules" default="true"/>
-    </kbase>
+  <kbase name="playerBase" packages="rules.player">
+    <ksession name="playerSession"/>
+  </kbase>
+  <kbase name="otherBase" packages="rules.other">
+    <ksession name="otherSession"/>
+  </kbase>
 </kmodule>

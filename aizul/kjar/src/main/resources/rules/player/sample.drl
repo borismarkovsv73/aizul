@@ -1,0 +1,11 @@
+package rules.player
+
+import com.ftn.sbnz.model.models.Player;
+
+rule "Set player as active"
+    when
+        $p : Player()
+    then
+        $p.setScore(20);
+        System.out.println("this works");
+end
