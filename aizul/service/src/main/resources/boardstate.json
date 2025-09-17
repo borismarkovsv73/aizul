@@ -1,0 +1,102 @@
+{
+    "id": 1,
+    "players": [
+        {
+            "id": 1,
+            "board": {
+                "id": 1,
+                "rows": [
+                    [null, null, null, null, null],
+                    [null, null, null, null],
+                    [null, null, null],
+                    [null, null],
+                    [null]
+                ],
+                "wall": [[null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null]],
+                "floor": [null, null, null, null, null, null, null]
+            },
+            "score": 10
+        },
+        {
+            "id": 2,
+            "board": {
+                "id": 2,
+                "rows": [
+                    [null, null, null, null, null],
+                    [null, null, null, null],
+                    [null, null, null],
+                    [null, null],
+                    [null]
+                ],
+                "wall": [[null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null],
+                         [null, null, null, null, null]],
+                "floor": [null, null, null, null, null, null, null]
+            },
+            "score": 15
+        }
+    ],
+    "factories": [
+        {
+            "id": 1,
+            "tiles": [
+                {
+                    "id": 1,
+                    "color": "red"
+                },
+                {
+                    "id": 2,
+                    "color": "blue"
+                },
+                {
+                    "id": 3,
+                    "color": "red"
+                }
+            ],
+            "center": false
+        },
+        {
+            "id": 2,
+            "tiles": [
+                {
+                    "id": 4,
+                    "color": "yellow"
+                },
+                {
+                    "id": 5,
+                    "color": "yellow"
+                },
+                {
+                    "id": 6,
+                    "color": "blue"
+                }
+            ],
+            "center": true
+        }
+    ],
+    "bag": [
+         {
+            "id": 7,
+            "color": "red"
+         },
+         {
+            "id": 8,
+            "color": "blue"
+         },
+         {
+            "id": 9,
+            "color": "yellow"
+         },
+         {
+            "id": 10,
+            "color": "red"
+         }
+    ],
+    "roundNumber" : 2
+}
