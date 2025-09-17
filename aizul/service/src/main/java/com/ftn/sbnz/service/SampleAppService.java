@@ -2,13 +2,10 @@ package com.ftn.sbnz.service;
 
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
-import org.kie.api.runtime.rule.AgendaFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.kie.api.runtime.rule.AgendaFilter;
-import org.kie.api.runtime.rule.Match;
 import com.ftn.sbnz.model.utils.JsonLoader;
 import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Player;

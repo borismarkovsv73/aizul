@@ -1,0 +1,21 @@
+package rules.1
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+
+rule "Row completion"
+    when
+        $m : Move()
+        $b : Board()
+        eval(
+            $b.getRows().stream().anyMatch(
+                row -> row.stream().allMatch(
+                    tile -> $m.getTakenTiles().contains(tile)
+                )
+            )
+        )
+    then
+        $m.setScore($m.getScore() + 5);
+        System.out.println("added points cause it completes row");
+end

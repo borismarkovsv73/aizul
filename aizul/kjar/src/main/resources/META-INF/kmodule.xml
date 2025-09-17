@@ -1,6 +1,6 @@
 <kmodule xmlns="http://www.drools.org/xsd/kmodule">
-  <kbase name="playerBase" packages="rules.player">
-    <ksession name="playerSession"/>
+  <kbase name="rule1Base" packages="rules.1">
+    <ksession name="ruleSession1"/>
   </kbase>
   <kbase name="otherBase" packages="rules.other">
     <ksession name="otherSession"/>
