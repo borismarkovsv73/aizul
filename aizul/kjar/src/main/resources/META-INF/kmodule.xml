@@ -1,5 +1,5 @@
 <kmodule xmlns="http://www.drools.org/xsd/kmodule">
-  <kbase name="rule1Base" packages="rules.1">
+  <kbase name="rule1Base" packages="rules.one">
     <ksession name="ruleSession1"/>
   </kbase>
   <kbase name="otherBase" packages="rules.other">
