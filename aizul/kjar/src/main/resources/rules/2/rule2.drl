@@ -1,0 +1,15 @@
+package rules.two
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import java.util.List;
+
+rule "Longest row"
+    when
+        $b : Board($rows : rows)
+        $m : Move($target : targetRow)
+        eval($target == 4 && ((java.util.List)$rows.get(4)) != null && !((java.util.List)$rows.get(4)).contains(null))
+    then
+        $m.setScore($m.getScore() + 7);
+        System.out.println("added points because filling the longest row");
+end
