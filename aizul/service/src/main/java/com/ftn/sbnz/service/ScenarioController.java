@@ -2,13 +2,14 @@ package com.ftn.sbnz.service;
 
 import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
-import com.ftn.sbnz.model.models.Player; // Change to your actual entity import
+import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.utils.JsonLoader;
 
-import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +51,8 @@ public class ScenarioController {
 	}
 
 	@GetMapping("/rule_2")
-	public Move rule_2() throws Exception {
-		Move primer = sampleService.rule_2();
+	public List<Move> rule_2() throws Exception {
+		List<Move> primer = sampleService.rule_2();
 		return primer;
 	}
 }

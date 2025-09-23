@@ -1,15 +1,18 @@
 package com.ftn.sbnz.service;
 
-import org.apache.tomcat.util.digester.Rules;
+import java.util.List;
+
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
-import org.kie.internal.builder.ScoreCardConfiguration.SCORECARD_INPUT_TYPE;
-import org.mvel2.asm.ModuleVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.ftn.sbnz.model.utils.GameStatePrinter;
 import com.ftn.sbnz.model.utils.JsonLoader;
+import com.ftn.sbnz.model.utils.MoveGenerator;
+import com.ftn.sbnz.model.utils.BoardUtils;
 import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
@@ -38,10 +41,8 @@ public class SampleAppService {
 	}
 
 	public Move rule_1() throws Exception{
-
-		//This is an example of a move and a mockBoard where that move has been fired
-		Board mockBoard = JsonLoader.loadBoard("service/src/main/resources/mockboard.json");
-		Move move = JsonLoader.loadMove("service/src/main/resources/moves.json");
+		Board mockBoard = JsonLoader.loadBoardFromClasspath("mockboard.json");
+		Move move = JsonLoader.loadMoveFromClasspath("moves.json");
 		KieSession kieSession = kieContainer.newKieSession("ruleSession1");
 		kieSession.insert(move);
 		kieSession.insert(mockBoard);
@@ -51,14 +52,33 @@ public class SampleAppService {
 		return move;
 	}
 
-	public Move rule_2() throws Exception{
-		Board mockBoard = JsonLoader.loadBoard("service/src/main/resources/mockboard.json");
-		Move move = JsonLoader.loadMove("service/src/main/resources/moves.json");
-		KieSession kieSession = kieContainer.newKieSession("ruleSession2");
-		kieSession.insert(mockBoard);
-		kieSession.insert(move);
-		kieSession.fireAllRules();
-		kieSession.dispose();
-		return move;
+	public List<Move> rule_2() throws Exception{
+		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("boardstate.json");
+		Player currentPlayer = mockGameState.getPlayers().get(0);
+		
+		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
+		
+		for (Move move : possibleMoves) {
+			KieSession kieSession = kieContainer.newKieSession("ruleSession2");
+
+			Board originalBoard = currentPlayer.getBoard();
+			Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
+			BoardUtils.applyMoveToBoard(boardAfterMove, move);
+
+			kieSession.insert(move);
+			kieSession.insert(boardAfterMove);
+
+			int rulesFired = kieSession.fireAllRules();
+			log.info("Applied " + rulesFired + " rules for move targeting row " + move.getTargetRow());
+			
+			kieSession.dispose();
+		}
+
+		for (Move move : possibleMoves) {
+			GameStatePrinter.printMove(move);
+			System.out.println(move.getScore());
+		}
+
+		return possibleMoves;
 	}
 }

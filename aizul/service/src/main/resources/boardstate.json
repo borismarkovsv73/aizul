@@ -29,7 +29,10 @@
                     }, 
                     null]
                 ],
-                "wall": [[null, null, null, null, null],
+                "wall": [[{
+                    "id": 21,
+                    "color": "yellow"
+                }, null, null, null, null],
                          [null, null, null, null, null],
                          [null, null, null, null, null],
                          [null, null, null, null, null],
