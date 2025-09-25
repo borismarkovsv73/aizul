@@ -8,4 +8,10 @@
   <kbase name="rule2Base" packages="rules.two">
     <ksession name="ruleSession2"/>
   </kbase>
+  <kbase name="backwardBase" packages="rules.backward">
+    <ksession name="backwardSession"/>
+  </kbase>
+  <kbase name="backwardBaseOne" packages="rules.backwardone">
+    <ksession name="backwardSessionOne"/>
+  </kbase>
 </kmodule>

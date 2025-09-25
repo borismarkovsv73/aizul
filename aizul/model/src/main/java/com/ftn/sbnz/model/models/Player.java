@@ -39,4 +39,11 @@ public class Player implements Serializable{
     public void setScore(int score) {
         this.score = score;
     }
+
+    @Override
+    public String toString() {
+        return "Player{id=" + id + 
+               ", board=" + board + 
+               ", score=" + score + "}";
+    }
 }

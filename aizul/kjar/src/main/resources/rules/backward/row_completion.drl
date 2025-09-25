@@ -1,0 +1,114 @@
+package rules.backward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.strategy.StrategicGoal;
+import com.ftn.sbnz.model.strategy.GoalJustification;
+
+query "howToCompleteRows"
+    $move : Move()
+    $board : Board($wall : wall)
+    eval(canCompleteRowWithThisMove($wall, $move.getTargetRow(), $move))
+end
+
+query "whichRowsCanBeCompleted" 
+    $board : Board($wall : wall)
+    $row : Integer() from [0, 1, 2, 3, 4]
+    eval(isRowAlmostComplete($wall, $row))
+end
+
+rule "Ask How To Complete Rows"
+    salience 100
+    when
+        $board : Board($wall : wall)
+        $row : Integer() from [0, 1, 2, 3, 4]
+        eval(isRowAlmostComplete($wall, $row))
+        not StrategicGoal(type == "COMPLETE_ROW_" + $row)
+    then
+        StrategicGoal question = new StrategicGoal("COMPLETE_ROW_" + $row, $row, -1, 20, true);
+        insert(question);
+        System.out.println("Question: How to complete row " + $row + "?");
+end
+
+rule "Find Answer To Question"
+    salience 90
+    no-loop true
+    when
+        $question : StrategicGoal(type.startsWith("COMPLETE_ROW_"), $targetRow : targetRow)
+        $move : Move(targetRow == $targetRow)
+        $board : Board($wall : wall)
+        eval(canCompleteRowWithThisMove($wall, $targetRow, $move))
+        not GoalJustification(goal == $question, move == $move)
+    then
+        GoalJustification answer = new GoalJustification();
+        answer.setGoal($question);
+        answer.setMove($move);
+        answer.setReasoning("Move completes row " + $targetRow);
+        insert(answer);
+end
+
+rule "Apply Strategic Bonus"
+    salience 80
+    no-loop true
+    when
+        $move : Move($originalScore : score)
+        $answer : GoalJustification(move == $move, $question : goal)
+        $strategicGoal : StrategicGoal(this == $question, $priority : priority, achievable == true)
+        $gameState : GameState($players : players)
+        $currentPlayer : Player() from $players
+        eval(shouldApplyStrategicBonus($gameState, $currentPlayer, $move, $priority))
+    then
+        int newScore = $originalScore + $priority;
+        $move.setScore(newScore);
+        System.out.println("Strategic bonus +" + $priority + " applied to move (" + $move.toString() + ") (total: " + newScore + ")");
+        $strategicGoal.setAchievable(false);
+        update($strategicGoal);
+end
+
+function boolean isRowAlmostComplete(Tile[][] wall, int targetRow) {
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    int filledCount = 0;
+    for (int col = 0; col < wall[targetRow].length; col++) {
+        if (wall[targetRow][col] != null) {
+            filledCount++;
+        }
+    }
+    
+    return filledCount == (wall[targetRow].length - 1);
+}
+
+function boolean canCompleteRowWithThisMove(Tile[][] wall, int targetRow, Move move) {
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    int emptyPositions = 0;
+    for (int col = 0; col < wall[targetRow].length; col++) {
+        if (wall[targetRow][col] == null) {
+            emptyPositions++;
+        }
+    }
+    
+    return emptyPositions == 1 && move.getTargetRow() == targetRow;
+}
+
+function boolean shouldApplyStrategicBonus(GameState gameState, Player currentPlayer, Move move, int bonusPoints) {
+    java.util.List<Player> players = gameState.getPlayers();
+    if (players.size() < 2) return true; // Single player - apply bonus
+    
+    int currentPlayerScore = currentPlayer.getScore();
+    int highestOpponentScore = 0;
+    
+    for (Player player : players) {
+        if (!player.getId().equals(currentPlayer.getId()) && player.getScore() > highestOpponentScore) {
+            highestOpponentScore = player.getScore();
+        }
+    }
+    
+    boolean isCurrentlyWinning = currentPlayerScore > highestOpponentScore;
+    boolean wouldBecomeWinning = (currentPlayerScore + bonusPoints) > highestOpponentScore;
+    
+    return isCurrentlyWinning || wouldBecomeWinning;
+}

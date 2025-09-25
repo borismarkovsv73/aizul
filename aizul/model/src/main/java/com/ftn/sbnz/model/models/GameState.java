@@ -50,4 +50,13 @@ public class GameState {
     public void setRoundNumber(int roundNumber) {
         this.roundNumber = roundNumber;
     }
+
+    @Override
+    public String toString() {
+        return "GameState{id=" + id + 
+               ", players=" + players + 
+               ", factories=" + factories + 
+               ", bag=" + bag + 
+               ", roundNumber=" + roundNumber + "}";
+    }
 }

@@ -1,0 +1,94 @@
+package rules.backwardone
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.strategy.StrategicGoal;
+import com.ftn.sbnz.model.strategy.GoalJustification;
+
+
+// Query: which columns are almost complete
+query "whichColumnsCanBeCompleted"
+    $board : Board($wall : wall)
+    $col : Integer() from [0, 1, 2, 3, 4]
+    eval(isColumnAlmostComplete($wall, $col))
+end
+
+// Query: how to complete a column (which move could help)
+query "howToCompleteColumns"
+    $move : Move()
+    $board : Board($wall : wall)
+    $col : Integer() from [0, 1, 2, 3, 4]
+    eval(canCompleteColumnWithThisMove($wall, $col, $move))
+end
+
+rule "Ask How To Complete Columns"
+    salience 100
+    when
+        $board : Board($wall : wall)
+        $col : Integer() from [0, 1, 2, 3, 4]
+        eval(isColumnAlmostComplete($wall, $col))
+        not StrategicGoal(type == "COMPLETE_COLUMN_" + $col)
+    then
+        StrategicGoal question = new StrategicGoal("COMPLETE_COLUMN_" + $col, $col, -1, 50, true);
+        insert(question);
+        System.out.println("Question: How to complete column " + $col + "?");
+end
+
+rule "Find Answer To Column Question"
+    salience 90
+    no-loop true
+    when
+        $question : StrategicGoal(type.startsWith("COMPLETE_COLUMN_"), $targetCol : targetRow)
+        $move : Move()
+        $board : Board($wall : wall)
+        eval(canCompleteColumnWithThisMove($wall, $targetCol, $move))
+        not GoalJustification(goal == $question, move == $move)
+    then
+        GoalJustification answer = new GoalJustification();
+        answer.setGoal($question);
+        answer.setMove($move);
+        answer.setReasoning("Move completes column " + $targetCol);
+        insert(answer);
+end
+
+rule "Apply Points"
+    salience 80
+    no-loop true
+    when
+        $move : Move($originalScore : score)
+        $answer : GoalJustification(move == $move, $question : goal)
+        $strategicGoal : StrategicGoal(this == $question, $priority : priority, achievable == true)
+        $gameState : GameState($players : players)
+        $currentPlayer : Player() from $players
+    then
+        int newScore = $originalScore + $priority;
+        $move.setScore(newScore);
+        System.out.println("Points +" + $priority + " applied to move (" + $move.toString() + ") (total: " + newScore + ")");
+        $strategicGoal.setAchievable(false);
+        update($strategicGoal);
+end
+
+// Helper functions (Java, in Board or a utility class)
+function boolean isColumnAlmostComplete(Tile[][] wall, int col) {
+    int filled = 0;
+    for (int row = 0; row < wall.length; row++) {
+        if (wall[row][col] != null) filled++;
+    }
+    return filled == wall.length - 1;
+}
+
+function boolean canCompleteColumnWithThisMove(Tile[][] wall, int col, Move move) {
+    // Returns true if placing tiles from this move in its targetRow would fill the last empty spot in column 'col'
+    int emptyRow = -1;
+    for (int row = 0; row < wall.length; row++) {
+        if (wall[row][col] == null) {
+            if (emptyRow == -1) emptyRow = row;
+            else return false; // More than one empty spot
+        }
+    }
+    // If only one empty spot, and move targets that row, and move's takenTiles can fill it
+    return emptyRow != -1 && move.getTargetRow() == emptyRow && move.getTakenTiles().size() > 0;
+}
