@@ -81,4 +81,64 @@ public class SampleAppService {
 
 		return possibleMoves;
 	}
+
+	public List<Move> backwardChainTest() throws Exception{
+		// Load a game state specifically designed to test backward chaining
+		// This file has rows with 4/5 and 3/5 tiles filled - perfect for backward chaining!
+		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_test.json");
+		Player currentPlayer = mockGameState.getPlayers().get(0);
+		
+		System.out.println("=== BACKWARD CHAINING TEST SETUP ===");
+		Board testBoard = currentPlayer.getBoard();
+		System.out.println("Row 0 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[0]));
+		System.out.println("Row 1 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[1]));
+		System.out.println("Row 2 (4/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[2]));
+		System.out.println("Row 3 (4/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[3]));
+		System.out.println("Row 4 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[4]));
+		
+		System.out.println("\nPattern Lines (preparation rows):");
+		for (int i = 0; i < testBoard.getRows().size(); i++) {
+			System.out.println("Pattern line " + (i+1) + ": " + testBoard.getRows().get(i));
+		}
+		
+		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
+
+		// PRAVI BACKWARD CHAINING - početak sa ciljem
+		KieSession backwardSession = kieContainer.newKieSession("backwardSession");
+
+		// 1. Prvo ubacujemo board stanje da identifikujemo ciljeve
+		Board originalBoard = currentPlayer.getBoard();
+		backwardSession.insert(originalBoard);
+		
+		// 2. Ubacujemo sve moguće poteze
+		for (Move move : possibleMoves) {
+			backwardSession.insert(move);
+		}
+
+		// 3. Pokretamo pravila za identifikaciju ciljeva
+		int rulesStep1 = backwardSession.fireAllRules();
+		log.info("Step 1 - Goal identification: Fired " + rulesStep1 + " rules");
+
+		// 4. Sada pokretamo pravila ponovo da bi našli opravdanja za ciljeve
+		int rulesStep2 = backwardSession.fireAllRules();
+		log.info("Step 2 - Move justification: Fired " + rulesStep2 + " rules");
+
+		// 5. I konačno apliciramo bonuse
+		int rulesStep3 = backwardSession.fireAllRules();
+		log.info("Step 3 - Bonus application: Fired " + rulesStep3 + " rules");
+
+		backwardSession.dispose();
+
+		// Sort moves by score (highest first)
+		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
+
+		System.out.println("=== BACKWARD CHAINING RESULTS ===");
+		for (Move move : possibleMoves) {
+			GameStatePrinter.printMove(move);
+			System.out.println("Final Score: " + move.getScore());
+			System.out.println("---");
+		}
+
+		return possibleMoves;
+	}
 }

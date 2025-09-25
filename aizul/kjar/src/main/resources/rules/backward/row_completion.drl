@@ -1,0 +1,107 @@
+package rules.backward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.strategy.StrategicGoal;
+import com.ftn.sbnz.model.strategy.GoalJustification;
+
+// Backward Chaining Query - Traži način da postigne cilj
+query "canAchieveGoal"
+    $goal : StrategicGoal(achievable == true)
+    $justification : GoalJustification(goal == $goal)
+end
+
+// BACKWARD CHAINING RULES - Ova pravila dokazuju kako možemo postići ciljeve
+
+rule "Identify Row Completion Goal"
+    when
+        $b : Board($wall : wall)
+        // Nema logike u then - samo proveravamo uslove
+        eval(rowNeedsOneMoreTile($wall))
+    then
+        // Samo kreiramo cilj, bez kalkulacija
+        for (int row = 0; row < $wall.length; row++) {
+            if (isRowAlmostComplete($wall, row)) {
+                StrategicGoal goal = new StrategicGoal();
+                goal.setType("ROW_COMPLETION");
+                goal.setTargetRow(row);
+                goal.setTargetCol(-1);
+                goal.setPriority(10); // Visok prioritet
+                goal.setAchievable(true);
+                insert(goal);
+                System.out.println("BACKWARD CHAIN: Identified row completion goal for row " + row);
+            }
+        }
+end
+
+rule "Find Move That Achieves Row Goal"
+    when
+        $goal : StrategicGoal(type == "ROW_COMPLETION", $targetRow : targetRow, achievable == true)
+        $move : Move(targetRow == $targetRow)
+        $board : Board($wall : wall)
+        // Provera da li ovaj potez može da postigne cilj - BEZ logike u then
+        eval(canMoveCompleteRow($wall, $targetRow, $move))
+        not GoalJustification(goal == $goal, move == $move)
+    then
+        // Samo kreiramo objašnjenje, bez računanja
+        GoalJustification justification = new GoalJustification();
+        justification.setGoal($goal);
+        justification.setMove($move);
+        justification.setReasoning("Move completes row " + $targetRow + " for +2 bonus points");
+        insert(justification);
+        System.out.println("BACKWARD CHAIN: Move '" + $move.toString() + "' can achieve row completion goal for row " + $targetRow);
+end
+
+rule "Apply Strategic Goal Bonus"
+    when
+        $move : Move($score : score)
+        $justification : GoalJustification(move == $move, $goal : goal)
+        $strategicGoal : StrategicGoal(this == $goal, $priority : priority)
+    then
+        // Ovde možemo dodati bonus jer imamo opravdanje
+        $move.setScore($score + $priority);
+        System.out.println("BACKWARD CHAIN: Applied strategic bonus of " + $priority + " to move");
+end
+
+// HELPER FUNCTIONS - Samo proveravaju uslove, bez kalkulacija
+
+function boolean rowNeedsOneMoreTile(Tile[][] wall) {
+    for (int row = 0; row < wall.length; row++) {
+        if (isRowAlmostComplete(wall, row)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function boolean isRowAlmostComplete(Tile[][] wall, int targetRow) {
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    int filledPositions = 0;
+    int totalPositions = wall[targetRow].length;
+    
+    for (int col = 0; col < totalPositions; col++) {
+        if (wall[targetRow][col] != null) {
+            filledPositions++;
+        }
+    }
+    
+    // Row is almost complete if it has 3 or 4 out of 5 positions filled
+    return filledPositions >= 3 && filledPositions < totalPositions;
+}
+
+function boolean canMoveCompleteRow(Tile[][] wall, int targetRow, Move move) {
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    int emptyPositions = 0;
+    for (int col = 0; col < wall[targetRow].length; col++) {
+        if (wall[targetRow][col] == null) {
+            emptyPositions++;
+        }
+    }
+    
+    // This move can complete the row if there's only 1 empty position left
+    // and the move targets this row (targetRow is 0-indexed, so targetRow should match)
+    return emptyPositions == 1 && move.getTargetRow() == targetRow;
+}

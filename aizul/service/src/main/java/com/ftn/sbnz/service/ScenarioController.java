@@ -55,4 +55,10 @@ public class ScenarioController {
 		List<Move> primer = sampleService.rule_2();
 		return primer;
 	}
+
+	@GetMapping("/backward_chain")
+	public List<Move> backwardChain() throws Exception {
+		List<Move> moves = sampleService.backwardChainTest();
+		return moves;
+	}
 }
