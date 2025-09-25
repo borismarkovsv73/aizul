@@ -8,45 +8,50 @@ import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.strategy.StrategicGoal;
 import com.ftn.sbnz.model.strategy.GoalJustification;
 
-query "howToCompleteRows"
+query "howToCompleteRowsAtDepth"
     $move : Move()
     $board : Board($wall : wall)
-    eval(canCompleteRowWithThisMove($wall, $move.getTargetRow(), $move))
+    $depth : Integer() from [1, 2, 3]
+    eval(canMoveHelpWithRowCompletion($wall, $move.getTargetRow(), $move, $depth))
 end
 
-query "whichRowsCanBeCompleted" 
+query "whichRowsNeedWork"
     $board : Board($wall : wall)
     $row : Integer() from [0, 1, 2, 3, 4]
-    eval(isRowAlmostComplete($wall, $row))
+    $depth : Integer() from [1, 2, 3]
+    eval(isRowMissingExactly($wall, $row, $depth))
 end
 
-rule "Ask How To Complete Rows"
+rule "Recursive Row Completion Strategy"
     salience 100
+    no-loop true
     when
         $board : Board($wall : wall)
         $row : Integer() from [0, 1, 2, 3, 4]
-        eval(isRowAlmostComplete($wall, $row))
-        not StrategicGoal(type == "COMPLETE_ROW_" + $row)
+        $depth : Integer() from [1, 2, 3]
+        eval(isRowMissingExactly($wall, $row, $depth))
+        not StrategicGoal(type == "COMPLETE_ROW_" + $row + "_" + $depth)
     then
-        StrategicGoal question = new StrategicGoal("COMPLETE_ROW_" + $row, $row, -1, 20, true);
-        insert(question);
-        System.out.println("Question: How to complete row " + $row + "?");
+        int bonusPoints = Math.max(5, 25 - ($depth * 5));
+        StrategicGoal recursiveGoal = new StrategicGoal("COMPLETE_ROW_" + $row + "_" + $depth, $row, $depth, bonusPoints, true);
+        insert(recursiveGoal);
+        System.out.println("RECURSIVE [Depth " + $depth + "]: Row " + $row + " needs " + $depth + " tiles");
 end
 
-rule "Find Answer To Question"
+rule "Find Recursive Answer"
     salience 90
     no-loop true
     when
-        $question : StrategicGoal(type.startsWith("COMPLETE_ROW_"), $targetRow : targetRow)
+        $question : StrategicGoal(type.startsWith("COMPLETE_ROW_"), $targetRow : targetRow, $depth : targetCol)
         $move : Move(targetRow == $targetRow)
         $board : Board($wall : wall)
-        eval(canCompleteRowWithThisMove($wall, $targetRow, $move))
+        eval(canMoveHelpWithRowCompletion($wall, $targetRow, $move, $depth))
         not GoalJustification(goal == $question, move == $move)
     then
         GoalJustification answer = new GoalJustification();
         answer.setGoal($question);
         answer.setMove($move);
-        answer.setReasoning("Move completes row " + $targetRow);
+        answer.setReasoning("Depth " + $depth + ": Move helps row " + $targetRow + " completion");
         insert(answer);
 end
 
@@ -56,19 +61,19 @@ rule "Apply Strategic Bonus"
     when
         $move : Move($originalScore : score)
         $answer : GoalJustification(move == $move, $question : goal)
-        $strategicGoal : StrategicGoal(this == $question, $priority : priority, achievable == true)
+        $strategicGoal : StrategicGoal(this == $question, $priority : priority, $depth : targetCol, achievable == true)
         $gameState : GameState($players : players)
         $currentPlayer : Player() from $players
         eval(shouldApplyStrategicBonus($gameState, $currentPlayer, $move, $priority))
+        not StrategicGoal(type == "BONUS_APPLIED_" + $move.hashCode())
     then
         int newScore = $originalScore + $priority;
         $move.setScore(newScore);
-        System.out.println("Strategic bonus +" + $priority + " applied to move (" + $move.toString() + ") (total: " + newScore + ")");
-        $strategicGoal.setAchievable(false);
-        update($strategicGoal);
+        StrategicGoal bonusTracker = new StrategicGoal("BONUS_APPLIED_" + $move.hashCode(), -1, $depth, 0, false);
+        insert(bonusTracker);
 end
 
-function boolean isRowAlmostComplete(Tile[][] wall, int targetRow) {
+function boolean isRowMissingExactly(Tile[][] wall, int targetRow, int missingCount) {
     if (targetRow < 0 || targetRow >= wall.length) return false;
     
     int filledCount = 0;
@@ -78,11 +83,12 @@ function boolean isRowAlmostComplete(Tile[][] wall, int targetRow) {
         }
     }
     
-    return filledCount == (wall[targetRow].length - 1);
+    return filledCount == (wall[targetRow].length - missingCount);
 }
 
-function boolean canCompleteRowWithThisMove(Tile[][] wall, int targetRow, Move move) {
+function boolean canMoveHelpWithRowCompletion(Tile[][] wall, int targetRow, Move move, int depth) {
     if (targetRow < 0 || targetRow >= wall.length) return false;
+    if (move.getTargetRow() != targetRow) return false;
     
     int emptyPositions = 0;
     for (int col = 0; col < wall[targetRow].length; col++) {
@@ -91,12 +97,12 @@ function boolean canCompleteRowWithThisMove(Tile[][] wall, int targetRow, Move m
         }
     }
     
-    return emptyPositions == 1 && move.getTargetRow() == targetRow;
+    return emptyPositions == depth;
 }
 
 function boolean shouldApplyStrategicBonus(GameState gameState, Player currentPlayer, Move move, int bonusPoints) {
     java.util.List<Player> players = gameState.getPlayers();
-    if (players.size() < 2) return true; // Single player - apply bonus
+    if (players.size() < 2) return true;
     
     int currentPlayerScore = currentPlayer.getScore();
     int highestOpponentScore = 0;
