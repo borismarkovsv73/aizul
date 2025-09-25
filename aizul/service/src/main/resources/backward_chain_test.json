@@ -55,7 +55,18 @@
                     ]
                 ],
                 "wall": [
-                    [null, null, null, null, null],
+                    [{
+                            "id": 40,
+                            "color": "blue"
+                        }, 
+                        {
+                            "id": 41,
+                            "color": "yellow"
+                        },
+                        null, 
+                        null, 
+                        null
+                    ],
                     [null, null, null, null, null],
                     [
                         {
@@ -95,7 +106,22 @@
                         },
                         null
                     ],
-                    [null, null, null, null, null]
+                    [
+                        {
+                            "id": 37,
+                            "color": "blue"
+                        }, 
+                        {
+                            "id": 38,
+                            "color": "yellow"
+                        }, 
+                        {
+                            "id": 39,
+                            "color": "white"
+                        }, 
+                        null,
+                        null
+                    ]
                 ],
                 "floor": [null, null, null, null, null, null, null]
             },

@@ -2,11 +2,11 @@
   <kbase name="rule1Base" packages="rules.one">
     <ksession name="ruleSession1"/>
   </kbase>
-  <kbase name="otherBase" packages="rules.other">
-    <ksession name="otherSession"/>
-  </kbase>
   <kbase name="rule2Base" packages="rules.two">
     <ksession name="ruleSession2"/>
+  </kbase>
+  <kbase name="playerBase" packages="rules.player">
+    <ksession name="playerSession"/>
   </kbase>
   <kbase name="backwardBase" packages="rules.backward">
     <ksession name="backwardSession"/>
