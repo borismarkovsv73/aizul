@@ -70,4 +70,14 @@ public class PlayerTurn {
     public void setExplanation(String explanation) {
         this.explanation = explanation;
     }
+
+    @Override
+    public String toString() {
+        return "PlayerTurn{id=" + id + 
+               ", playerId=" + playerId + 
+               ", newBoardState=" + newBoardState + 
+               ", factoriesState=" + factoriesState + 
+               ", move=" + move + 
+               ", explanation='" + explanation + "'}";
+    }
 }

@@ -39,4 +39,13 @@ public class Factory {
     public void setTiles(List<Tile> tiles) {
         this.tiles = tiles;
     }
+
+    @Override
+    public String toString() {
+        String tiles = "";
+        for (Tile tile : this.tiles) {
+            tiles += tile.toString() + " ";
+        }
+        return "[" + (isCenter ? "Center" : "Factory " + id) + ": " + tiles.trim() + "]";
+    }
 }

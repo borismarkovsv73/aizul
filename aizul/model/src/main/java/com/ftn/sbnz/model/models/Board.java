@@ -49,4 +49,30 @@ public class Board {
     public void setFloor(List<Tile> floor) {
         this.floor = floor;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Board{id=").append(id);
+        sb.append(", rows=").append(rows);
+        sb.append(", wall=");
+        if (wall != null) {
+            sb.append("[");
+            for (int i = 0; i < wall.length; i++) {
+                sb.append("[");
+                for (int j = 0; j < wall[i].length; j++) {
+                    sb.append(wall[i][j] != null ? wall[i][j].getColor() : "null");
+                    if (j < wall[i].length - 1) sb.append(",");
+                }
+                sb.append("]");
+                if (i < wall.length - 1) sb.append(",");
+            }
+            sb.append("]");
+        } else {
+            sb.append("null");
+        }
+        sb.append(", floor=").append(floor);
+        sb.append("}");
+        return sb.toString();
+    }
 }

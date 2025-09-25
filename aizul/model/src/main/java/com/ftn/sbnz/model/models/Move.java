@@ -50,4 +50,9 @@ public class Move {
     public void setScore(int score) {
         this.score = score;
     }
+
+    @Override
+    public String toString() {
+        return "Take " + takenTiles.size() + " " + takenTiles.get(0).toString() + " tiles from factory " + factoryId + " and place in row " + targetRow;
+    }
 }

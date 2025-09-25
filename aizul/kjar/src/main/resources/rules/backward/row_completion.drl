@@ -3,95 +3,85 @@ package rules.backward
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.strategy.StrategicGoal;
 import com.ftn.sbnz.model.strategy.GoalJustification;
 
-// Backward Chaining Query - Traži način da postigne cilj
-query "canAchieveGoal"
-    $goal : StrategicGoal(achievable == true)
-    $justification : GoalJustification(goal == $goal)
+query "howToCompleteRows"
+    $move : Move()
+    $board : Board($wall : wall)
+    eval(canCompleteRowWithThisMove($wall, $move.getTargetRow(), $move))
 end
 
-// BACKWARD CHAINING RULES - Ova pravila dokazuju kako možemo postići ciljeve
+query "whichRowsCanBeCompleted" 
+    $board : Board($wall : wall)
+    $row : Integer() from [0, 1, 2, 3, 4]
+    eval(isRowAlmostComplete($wall, $row))
+end
 
-rule "Identify Row Completion Goal"
+rule "Ask How To Complete Rows"
+    salience 100
     when
-        $b : Board($wall : wall)
-        // Nema logike u then - samo proveravamo uslove
-        eval(rowNeedsOneMoreTile($wall))
+        $board : Board($wall : wall)
+        $row : Integer() from [0, 1, 2, 3, 4]
+        eval(isRowAlmostComplete($wall, $row))
+        not StrategicGoal(type == "COMPLETE_ROW_" + $row)
     then
-        // Samo kreiramo cilj, bez kalkulacija
-        for (int row = 0; row < $wall.length; row++) {
-            if (isRowAlmostComplete($wall, row)) {
-                StrategicGoal goal = new StrategicGoal();
-                goal.setType("ROW_COMPLETION");
-                goal.setTargetRow(row);
-                goal.setTargetCol(-1);
-                goal.setPriority(10); // Visok prioritet
-                goal.setAchievable(true);
-                insert(goal);
-                System.out.println("BACKWARD CHAIN: Identified row completion goal for row " + row);
-            }
-        }
+        StrategicGoal question = new StrategicGoal("COMPLETE_ROW_" + $row, $row, -1, 20, true);
+        insert(question);
+        System.out.println("Question: How to complete row " + $row + "?");
 end
 
-rule "Find Move That Achieves Row Goal"
+rule "Find Answer To Question"
+    salience 90
+    no-loop true
     when
-        $goal : StrategicGoal(type == "ROW_COMPLETION", $targetRow : targetRow, achievable == true)
+        $question : StrategicGoal(type.startsWith("COMPLETE_ROW_"), $targetRow : targetRow)
         $move : Move(targetRow == $targetRow)
         $board : Board($wall : wall)
-        // Provera da li ovaj potez može da postigne cilj - BEZ logike u then
-        eval(canMoveCompleteRow($wall, $targetRow, $move))
-        not GoalJustification(goal == $goal, move == $move)
+        eval(canCompleteRowWithThisMove($wall, $targetRow, $move))
+        not GoalJustification(goal == $question, move == $move)
     then
-        // Samo kreiramo objašnjenje, bez računanja
-        GoalJustification justification = new GoalJustification();
-        justification.setGoal($goal);
-        justification.setMove($move);
-        justification.setReasoning("Move completes row " + $targetRow + " for +2 bonus points");
-        insert(justification);
-        System.out.println("BACKWARD CHAIN: Move '" + $move.toString() + "' can achieve row completion goal for row " + $targetRow);
+        GoalJustification answer = new GoalJustification();
+        answer.setGoal($question);
+        answer.setMove($move);
+        answer.setReasoning("Move completes row " + $targetRow);
+        insert(answer);
 end
 
-rule "Apply Strategic Goal Bonus"
+rule "Apply Strategic Bonus"
+    salience 80
+    no-loop true
     when
-        $move : Move($score : score)
-        $justification : GoalJustification(move == $move, $goal : goal)
-        $strategicGoal : StrategicGoal(this == $goal, $priority : priority)
+        $move : Move($originalScore : score)
+        $answer : GoalJustification(move == $move, $question : goal)
+        $strategicGoal : StrategicGoal(this == $question, $priority : priority, achievable == true)
+        $gameState : GameState($players : players)
+        $currentPlayer : Player() from $players
+        eval(shouldApplyStrategicBonus($gameState, $currentPlayer, $move, $priority))
     then
-        // Ovde možemo dodati bonus jer imamo opravdanje
-        $move.setScore($score + $priority);
-        System.out.println("BACKWARD CHAIN: Applied strategic bonus of " + $priority + " to move");
+        int newScore = $originalScore + $priority;
+        $move.setScore(newScore);
+        System.out.println("Strategic bonus +" + $priority + " applied to move (" + $move.toString() + ") (total: " + newScore + ")");
+        $strategicGoal.setAchievable(false);
+        update($strategicGoal);
 end
-
-// HELPER FUNCTIONS - Samo proveravaju uslove, bez kalkulacija
-
-function boolean rowNeedsOneMoreTile(Tile[][] wall) {
-    for (int row = 0; row < wall.length; row++) {
-        if (isRowAlmostComplete(wall, row)) {
-            return true;
-        }
-    }
-    return false;
-}
 
 function boolean isRowAlmostComplete(Tile[][] wall, int targetRow) {
     if (targetRow < 0 || targetRow >= wall.length) return false;
     
-    int filledPositions = 0;
-    int totalPositions = wall[targetRow].length;
-    
-    for (int col = 0; col < totalPositions; col++) {
+    int filledCount = 0;
+    for (int col = 0; col < wall[targetRow].length; col++) {
         if (wall[targetRow][col] != null) {
-            filledPositions++;
+            filledCount++;
         }
     }
     
-    // Row is almost complete if it has 3 or 4 out of 5 positions filled
-    return filledPositions >= 3 && filledPositions < totalPositions;
+    return filledCount == (wall[targetRow].length - 1);
 }
 
-function boolean canMoveCompleteRow(Tile[][] wall, int targetRow, Move move) {
+function boolean canCompleteRowWithThisMove(Tile[][] wall, int targetRow, Move move) {
     if (targetRow < 0 || targetRow >= wall.length) return false;
     
     int emptyPositions = 0;
@@ -101,7 +91,24 @@ function boolean canMoveCompleteRow(Tile[][] wall, int targetRow, Move move) {
         }
     }
     
-    // This move can complete the row if there's only 1 empty position left
-    // and the move targets this row (targetRow is 0-indexed, so targetRow should match)
     return emptyPositions == 1 && move.getTargetRow() == targetRow;
+}
+
+function boolean shouldApplyStrategicBonus(GameState gameState, Player currentPlayer, Move move, int bonusPoints) {
+    java.util.List<Player> players = gameState.getPlayers();
+    if (players.size() < 2) return true; // Single player - apply bonus
+    
+    int currentPlayerScore = currentPlayer.getScore();
+    int highestOpponentScore = 0;
+    
+    for (Player player : players) {
+        if (!player.getId().equals(currentPlayer.getId()) && player.getScore() > highestOpponentScore) {
+            highestOpponentScore = player.getScore();
+        }
+    }
+    
+    boolean isCurrentlyWinning = currentPlayerScore > highestOpponentScore;
+    boolean wouldBecomeWinning = (currentPlayerScore + bonusPoints) > highestOpponentScore;
+    
+    return isCurrentlyWinning || wouldBecomeWinning;
 }

@@ -83,12 +83,10 @@ public class SampleAppService {
 	}
 
 	public List<Move> backwardChainTest() throws Exception{
-		// Load a game state specifically designed to test backward chaining
-		// This file has rows with 4/5 and 3/5 tiles filled - perfect for backward chaining!
 		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
 		
-		System.out.println("=== BACKWARD CHAINING TEST SETUP ===");
+		System.out.println("\nBackward chaining test with the following board state:");
 		Board testBoard = currentPlayer.getBoard();
 		System.out.println("Row 0 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[0]));
 		System.out.println("Row 1 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[1]));
@@ -98,45 +96,63 @@ public class SampleAppService {
 		
 		System.out.println("\nPattern Lines (preparation rows):");
 		for (int i = 0; i < testBoard.getRows().size(); i++) {
-			System.out.println("Pattern line " + (i+1) + ": " + testBoard.getRows().get(i));
+			System.out.println("Pattern line " + (i+1) + ": " + testBoard.getRows().get(i).toString());
 		}
 		
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
 
-		// PRAVI BACKWARD CHAINING - početak sa ciljem
 		KieSession backwardSession = kieContainer.newKieSession("backwardSession");
-
-		// 1. Prvo ubacujemo board stanje da identifikujemo ciljeve
 		Board originalBoard = currentPlayer.getBoard();
 		backwardSession.insert(originalBoard);
+		backwardSession.insert(mockGameState);
+		backwardSession.insert(currentPlayer);
 		
-		// 2. Ubacujemo sve moguće poteze
 		for (Move move : possibleMoves) {
 			backwardSession.insert(move);
 		}
+		
+		backwardSession.insert(originalBoard.getWall());
+		
+		// 2. Pokretamo sva pravila za backward chaining
+		int totalRules = backwardSession.fireAllRules();
+		log.info("BACKWARD CHAINING: Fired " + totalRules + " rules total");
 
-		// 3. Pokretamo pravila za identifikaciju ciljeva
-		int rulesStep1 = backwardSession.fireAllRules();
-		log.info("Step 1 - Goal identification: Fired " + rulesStep1 + " rules");
+		System.out.println("\nCompletable rows:");
+		org.kie.api.runtime.rule.QueryResults completableRows = 
+			backwardSession.getQueryResults("whichRowsCanBeCompleted");
+		
+		if (completableRows.size() > 0) {
+			System.out.println("Found " + completableRows.size() + " rows that can be completed:");
+			for (org.kie.api.runtime.rule.QueryResultsRow row : completableRows) {
+				Integer targetRow = (Integer) row.get("$row");
+				System.out.println("> Row " + targetRow + " can be completed");
+			}
+		} else {
+			System.out.println("No rows can be completed.");
+		}
 
-		// 4. Sada pokretamo pravila ponovo da bi našli opravdanja za ciljeve
-		int rulesStep2 = backwardSession.fireAllRules();
-		log.info("Step 2 - Move justification: Fired " + rulesStep2 + " rules");
-
-		// 5. I konačno apliciramo bonuse
-		int rulesStep3 = backwardSession.fireAllRules();
-		log.info("Step 3 - Bonus application: Fired " + rulesStep3 + " rules");
+		System.out.println("\nMoves that can complete rows:");
+		org.kie.api.runtime.rule.QueryResults solutions = 
+			backwardSession.getQueryResults("howToCompleteRows");
+		
+		if (solutions.size() > 0) {
+			System.out.println("Found " + solutions.size() + " moves that can complete rows:");
+			for (org.kie.api.runtime.rule.QueryResultsRow solution : solutions) {
+				Move move = (Move) solution.get("$move");
+				System.out.println("> Solution: " + move.toString() + " can complete row " + move.getTargetRow());
+			}
+		} else {
+			System.out.println("No moves can complete any rows.");
+		}
 
 		backwardSession.dispose();
-
-		// Sort moves by score (highest first)
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
 
-		System.out.println("=== BACKWARD CHAINING RESULTS ===");
+		System.out.println("All results:");
 		for (Move move : possibleMoves) {
 			GameStatePrinter.printMove(move);
 			System.out.println("Final Score: " + move.getScore());
-			System.out.println("---");
+			System.out.println("-".repeat(60));
 		}
 
 		return possibleMoves;

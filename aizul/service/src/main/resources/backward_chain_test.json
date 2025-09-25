@@ -24,8 +24,14 @@
                             "id": 34,
                             "color": "black"
                         },
-                        null,
-                        null,
+                        {
+                            "id": 35,
+                            "color": "black"
+                        },
+                        {
+                            "id": 36,
+                            "color": "black"
+                        },
                         null
                     ],
                     [
@@ -85,7 +91,7 @@
                         }, 
                         {
                             "id": 32,
-                            "color": "black"
+                            "color": "white"
                         },
                         null
                     ],
