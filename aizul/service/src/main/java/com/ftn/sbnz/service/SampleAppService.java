@@ -32,34 +32,14 @@ public class SampleAppService {
 		this.kieContainer = kieContainer;
 	}
 
-	public Player getClassifiedItem(Player i) {
-		KieSession kieSession = kieContainer.newKieSession("playerSession");
-		kieSession.insert(i);
-		kieSession.fireAllRules();
-		kieSession.dispose();
-		return i;
-	}
-
-	public Move rule_1() throws Exception{
-		Board mockBoard = JsonLoader.loadBoardFromClasspath("mockboard.json");
-		Move move = JsonLoader.loadMoveFromClasspath("moves.json");
-		KieSession kieSession = kieContainer.newKieSession("ruleSession1");
-		kieSession.insert(move);
-		kieSession.insert(mockBoard);
-		kieSession.fireAllRules();
-		kieSession.dispose();
-
-		return move;
-	}
-
-	public List<Move> rule_2() throws Exception{
-		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("boardstate.json");
+	public List<Move> forwardChain() throws Exception{
+		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_combined_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
 		
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
 		
 		for (Move move : possibleMoves) {
-			KieSession kieSession = kieContainer.newKieSession("ruleSession2");
+			KieSession kieSession = kieContainer.newKieSession("forwardSession");
 
 			Board originalBoard = currentPlayer.getBoard();
 			Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
@@ -82,128 +62,51 @@ public class SampleAppService {
 		return possibleMoves;
 	}
 
-	public List<Move> backwardChainTest() throws Exception{
-		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_test.json");
+	public List<Move> unifiedBackwardChainTest() throws Exception {
+		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_combined_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
 
-		System.out.println("Backward chaining test for player: " + currentPlayer.getId());
-		Board testBoard = currentPlayer.getBoard();
-		for (int i = 0; i < testBoard.getWall().length; i++) {
-			int filled = 0;
-			for (int j = 0; j < testBoard.getWall()[i].length; j++) {
-				if (testBoard.getWall()[i][j] != null) filled++;
-			}
-			System.out.println("Row " + i + ": " + filled + "/5 filled");
-		}
-		
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
+		
+		System.out.println("Generated " + possibleMoves.size() + " possible moves for testing");
+		
+		KieSession unifiedSession = kieContainer.newKieSession("combinedBackwardSession");
 
-		KieSession backwardSession = kieContainer.newKieSession("backwardSession");
-		backwardSession.insert(testBoard);
-		backwardSession.insert(mockGameState);
-		backwardSession.insert(currentPlayer);
+		Board testBoard = currentPlayer.getBoard();
+		
+		unifiedSession.insert(testBoard);
+		unifiedSession.insert(mockGameState);
+		unifiedSession.insert(currentPlayer);
 		
 		for (Move move : possibleMoves) {
-			backwardSession.insert(move);
-		}
-		
-		int totalRules = backwardSession.fireAllRules();
-		System.out.println("Total rules fired: " + totalRules);
-
-		org.kie.api.runtime.rule.QueryResults recursiveMoves = 
-			backwardSession.getQueryResults("howToCompleteRowsAtDepth");
-
-		System.out.println("\nSolutions found: " + recursiveMoves.size());
-		for (org.kie.api.runtime.rule.QueryResultsRow solution : recursiveMoves) {
-			Move move = (Move) solution.get("$move");
-			Integer depth = (Integer) solution.get("$depth");
-			System.out.println("Depth " + depth + ": Row " + move.getTargetRow() + ": " + move.toString() + " move");
+			move.setScore(0); // Reset scores
+			unifiedSession.insert(move);
 		}
 
-		backwardSession.dispose();
+		int totalRules = unifiedSession.fireAllRules();
+		System.out.println("Unified backward chaining fired " + totalRules + " rules total");
+		unifiedSession.dispose();
+
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
-
-		System.out.println("\n=== FINAL RESULTS ===");
-		for (Move move : possibleMoves) {
-			System.out.println("[" + move.toString() + "] - Score: " + move.getScore());
+		
+		for (int i = 0; i < Math.min(10, possibleMoves.size()); i++) {
+			Move move = possibleMoves.get(i);
+			System.out.println(String.format("Rank %2d: %s - Score: %d", 
+				(i+1), move.toString(), move.getScore()));
+		}
+		
+		System.out.println("\nTop move analysis:");
+		if (!possibleMoves.isEmpty()) {
+			Move topMove = possibleMoves.get(0);
+			System.out.println("Best move: " + topMove.toString() + " with score: " + topMove.getScore());
 		}
 
 		return possibleMoves;
 	}
 
-	public List<Move> backwardChainTest2() throws Exception{
-		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_test_col.json");
-		Player currentPlayer = mockGameState.getPlayers().get(0);
-		
-		System.out.println("\nBackward chaining test with the following board state:");
-		Board testBoard = currentPlayer.getBoard();
-		System.out.println("Row 0 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[0]));
-		System.out.println("Row 1 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[1]));
-		System.out.println("Row 2 (4/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[2]));
-		System.out.println("Row 3 (4/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[3]));
-		System.out.println("Row 4 (0/5 filled): " + java.util.Arrays.toString(testBoard.getWall()[4]));
-		
-		System.out.println("\nPattern Lines (preparation rows):");
-		for (int i = 0; i < testBoard.getRows().size(); i++) {
-			System.out.println("Pattern line " + (i+1) + ": " + testBoard.getRows().get(i).toString());
-		}
-		
-		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
+    public Player getClassifiedItem(Player newItem) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getClassifiedItem'");
+    }
 
-		KieSession backwardSession = kieContainer.newKieSession("backwardSessionOne");
-		Board originalBoard = currentPlayer.getBoard();
-		backwardSession.insert(originalBoard);
-		backwardSession.insert(mockGameState);
-		backwardSession.insert(currentPlayer);
-		
-		for (Move move : possibleMoves) {
-			backwardSession.insert(move);
-		}
-		
-		backwardSession.insert(originalBoard.getWall());
-		
-		// 2. Pokretamo sva pravila za backward chaining
-		int totalRules = backwardSession.fireAllRules();
-		log.info("BACKWARD CHAINING: Fired " + totalRules + " rules total");
-
-		System.out.println("\nCompletable columns:");
-		org.kie.api.runtime.rule.QueryResults completableCols = 
-			backwardSession.getQueryResults("whichColumnsCanBeCompleted");
-		
-		if (completableCols.size() > 0) {
-			System.out.println("Found " + completableCols.size() + " columns that can be completed:");
-			for (org.kie.api.runtime.rule.QueryResultsRow row : completableCols) {
-				Integer targetCol = (Integer) row.get("$col");
-				System.out.println("> Column " + targetCol + " can be completed");
-			}
-		} else {
-			System.out.println("No columns can be completed.");
-		}
-
-		System.out.println("\nMoves that can complete columns:");
-		org.kie.api.runtime.rule.QueryResults solutions = 
-			backwardSession.getQueryResults("howToCompleteColumns");
-		
-		if (solutions.size() > 0) {
-			System.out.println("Found " + solutions.size() + " moves that can complete intended row:");
-			for (org.kie.api.runtime.rule.QueryResultsRow solution : solutions) {
-				Move move = (Move) solution.get("$move");
-				System.out.println("> Solution: " + move.toString() + " can complete row " + move.getTargetRow());
-			}
-		} else {
-			System.out.println("No moves can complete any rows.");
-		}
-
-		backwardSession.dispose();
-		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
-
-		System.out.println("All results:");
-		for (Move move : possibleMoves) {
-			GameStatePrinter.printMove(move);
-			System.out.println("Final Score: " + move.getScore());
-			System.out.println("-".repeat(60));
-		}
-
-		return possibleMoves;
-	}
 }

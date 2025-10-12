@@ -1,4 +1,4 @@
-package rules.two
+package rules.forward
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
