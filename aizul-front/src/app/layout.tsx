@@ -10,6 +10,7 @@ import localFont from "next/font/local";
 import Image from "next/image";
 import { GiGreekTemple } from "react-icons/gi";
 import { BsFillGrid3X3GapFill } from "react-icons/bs";
+import { MdOutlineScience } from "react-icons/md";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,10 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="{elektra.variable}">
+      <head>
+        <title>AIZUL - Azul Agent</title>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body className={`antialiased flex`}>
         <nav
           className={`${elektra.className} fixed top-0 left-0 flex flex-col items-start p-6 bg-layout-bg shadow-lg rounded-tr-xl rounded-br-xl w-64 min-h-screen h-screen text-layout-text`}
@@ -68,7 +73,7 @@ export default function RootLayout({
             className={`
               font-medium transition-colors duration-200 px-4 py-3 rounded-lg w-full text-left mb-2
               flex items-center
-              ${isActive("/") ? "bg-layout-light-accent hover:bg-layout-light-accent-hover hover:text-layout-bg" : " hover:bg-layout-light-accent"}
+              ${isActive("/") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
           >
             <GiGreekTemple className="mr-3" /> Home
@@ -78,10 +83,10 @@ export default function RootLayout({
             className={`
               font-medium transition-colors duration-200 px-4 py-3 rounded-lg w-full text-left mb-2
               flex items-center
-              ${isActive("/board-demo") ? "bg-layout-light-accent hover:bg-layout-light-accent-hover hover:text-layout-bg" : " hover:bg-layout-light-accent"}
+              ${isActive("/board-demo") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
           >
-            <BsFillGrid3X3GapFill className="mr-3" /> Board Demo
+            <MdOutlineScience className="mr-3" /> Board Analysis
           </Link>
         </nav>
         <div className="flex-1 p-8 text-center text-gray-600 ml-64">
