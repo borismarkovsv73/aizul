@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.ftn.sbnz.model.utils.GameStatePrinter;
 import com.ftn.sbnz.model.utils.JsonLoader;
 import com.ftn.sbnz.model.utils.MoveGenerator;
 import com.ftn.sbnz.model.utils.BoardUtils;
@@ -47,16 +46,19 @@ public class SampleAppService {
 
 			kieSession.insert(move);
 			kieSession.insert(boardAfterMove);
+			kieSession.insert(mockGameState);
+			kieSession.insert(currentPlayer);
 
-			int rulesFired = kieSession.fireAllRules();
-			log.info("Applied " + rulesFired + " rules for move targeting row " + move.getTargetRow());
-			
+			kieSession.fireAllRules();			
 			kieSession.dispose();
 		}
 
-		for (Move move : possibleMoves) {
-			GameStatePrinter.printMove(move);
-			System.out.println(move.getScore());
+		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
+		
+		for (int i = 0; i < Math.min(10, possibleMoves.size()); i++) {
+			Move move = possibleMoves.get(i);
+			System.out.println(String.format("Rank %2d: %s - Score: %d", 
+				(i+1), move.toString(), move.getScore()));
 		}
 
 		return possibleMoves;

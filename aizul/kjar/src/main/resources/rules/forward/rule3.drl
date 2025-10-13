@@ -1,0 +1,15 @@
+package rules.forward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+
+rule "Continue existing row"
+    when
+        $m : Move($targetRow : targetRow)
+        $b : Board($rows : rows)
+        eval($targetRow >= 0)
+        exists( Tile() from $rows.get($targetRow) )
+    then
+        $m.setScore($m.getScore() + 3);
+end
