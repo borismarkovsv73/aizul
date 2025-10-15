@@ -1,0 +1,48 @@
+package rules.forward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+
+rule "Strategic row completion"
+    when
+        $m : Move($targetRow : targetRow)
+        $b : Board($wall : wall)
+        $player : Player($currentScore : score, $board : board)
+        $gameState : GameState($players : players)
+        eval($targetRow >= 0 && willCompleteWallRow($wall, $targetRow))
+    then
+        if (isAheadOfOpponents($player, $players)) {
+            $m.setScore($m.getScore() + 15);
+        } else {
+            $m.setScore($m.getScore() - 15);
+        }
+end
+
+function boolean willCompleteWallRow(Tile[][] wall, int targetRow) {
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    int filledTiles = 0;
+    for (int col = 0; col < wall[targetRow].length; col++) {
+        if (wall[targetRow][col] != null) {
+            filledTiles++;
+        }
+    }
+    
+    return filledTiles == 4;
+}
+
+function boolean isAheadOfOpponents(Player currentPlayer, java.util.List players) {
+    int currentScore = currentPlayer.getScore();
+    
+    for (Object playerObj : players) {
+        Player player = (Player) playerObj;
+        if (!player.getId().equals(currentPlayer.getId()) && player.getScore() >= currentScore) {
+            return false;
+        }
+    }
+    
+    return true;
+}

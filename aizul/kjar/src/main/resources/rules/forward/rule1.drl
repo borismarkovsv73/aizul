@@ -1,8 +1,8 @@
-package rules.one
+package rules.forward
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
-import com.ftn.sbnz.model.utils.BoardUtils
+import com.ftn.sbnz.model.utils.BoardUtils;
 
 rule "Row completion"
     when
@@ -11,5 +11,4 @@ rule "Row completion"
         eval(BoardUtils.completedRowContainsMoveTile($b, $m))
     then
         $m.setScore($m.getScore() + 5);
-        System.out.println("added points cause it completes row");
 end

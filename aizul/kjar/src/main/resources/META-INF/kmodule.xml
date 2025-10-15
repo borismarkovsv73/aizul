@@ -1,17 +1,8 @@
 <kmodule xmlns="http://www.drools.org/xsd/kmodule">
-  <kbase name="rule1Base" packages="rules.one">
-    <ksession name="ruleSession1"/>
+  <kbase name="ruleBase" packages="rules.forward">
+    <ksession name="forwardSession"/>
   </kbase>
-  <kbase name="rule2Base" packages="rules.two">
-    <ksession name="ruleSession2"/>
-  </kbase>
-  <kbase name="playerBase" packages="rules.player">
-    <ksession name="playerSession"/>
-  </kbase>
-  <kbase name="backwardBase" packages="rules.backward">
-    <ksession name="backwardSession"/>
-  </kbase>
-  <kbase name="backwardBaseOne" packages="rules.backwardone">
-    <ksession name="backwardSessionOne"/>
+  <kbase name="combinedBackwardBase" packages="rules.backward">
+    <ksession name="combinedBackwardSession"/>
   </kbase>
 </kmodule>

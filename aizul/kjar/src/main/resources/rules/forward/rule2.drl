@@ -1,4 +1,4 @@
-package rules.two
+package rules.forward
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
@@ -12,6 +12,5 @@ rule "Floor overflow"
                 Tile( $tId : id ) from $takenTiles and
                 eval($fId != null && $tId != null && $fId.equals($tId)) )
     then
-        $m.setScore($m.getScore() - 5);
-        System.out.println("removed points because a tile fell to the floor");
+        $m.setScore($m.getScore() - 10);
 end

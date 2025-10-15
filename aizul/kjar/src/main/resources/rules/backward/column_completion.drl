@@ -1,0 +1,54 @@
+package rules.backward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+
+query "recursiveColumnDepthChain"( Move move, Board board, Integer currentDepth )
+  eval(canCompleteColumnAtDepth(board.getWall(), move, currentDepth))
+  or
+  ( eval(currentDepth < 3) and recursiveColumnDepthChain( move, board, currentDepth + 1; ) )
+end
+
+rule "Find Recursive Column Answer"
+    salience 90
+    no-loop true
+    when
+        $move : Move()
+        $board : Board($wall : wall)
+        recursiveColumnDepthChain( $move, $board, 1; )
+        not String(this == "COL_PROCESSED_" + $move.hashCode())
+    then
+        String processed = "COL_PROCESSED_" + $move.hashCode();
+        insert(processed);
+        
+        int bonusPoints = 0;
+        if (canCompleteColumnAtDepth($wall, $move, 1)) {
+            bonusPoints = 25;
+        } else if (canCompleteColumnAtDepth($wall, $move, 2)) {
+            bonusPoints = 20;
+        } else if (canCompleteColumnAtDepth($wall, $move, 3)) {
+            bonusPoints = 15;
+        }
+        
+        int newScore = $move.getScore() + bonusPoints;
+        $move.setScore(newScore);
+end
+
+function boolean canCompleteColumnAtDepth(Tile[][] wall, Move move, int depth) {
+    int targetRow = move.getTargetRow();
+    if (targetRow < 0 || targetRow >= wall.length) return false;
+    
+    for (int col = 0; col < wall[0].length; col++) {
+        int emptySpots = 0;
+        for (int row = 0; row < wall.length; row++) {
+            if (wall[row][col] == null) {
+                emptySpots++;
+            }
+        }
+        if (emptySpots <= depth && emptySpots > 0 && wall[targetRow][col] == null) {
+            return true;
+        }
+    }
+    return false;
+}

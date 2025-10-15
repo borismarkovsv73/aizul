@@ -1,0 +1,56 @@
+package rules.backward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+
+query "recursiveColorDepthChain"( Move move, Board board, Integer currentDepth )
+  eval(canMoveHelpWithColorCompletion(board.getWall(), move, currentDepth))
+  or
+  ( eval(currentDepth < 4) and recursiveColorDepthChain( move, board, currentDepth + 1; ) )
+end
+
+rule "Find Recursive Color Answer"
+    salience 85
+    no-loop true
+    when
+        $move : Move()
+        $board : Board($wall : wall)
+        recursiveColorDepthChain( $move, $board, 1; )
+        not String(this == "COLOR_PROCESSED_" + $move.hashCode())
+    then
+        String processed = "COLOR_PROCESSED_" + $move.hashCode();
+        insert(processed);
+
+        int bonusPoints = 0;
+        if (canMoveHelpWithColorCompletion($wall, $move, 4)) {
+            bonusPoints = 25;
+        } else if (canMoveHelpWithColorCompletion($wall, $move, 3)) {
+            bonusPoints = 20;
+        } else if (canMoveHelpWithColorCompletion($wall, $move, 2)) {
+            bonusPoints = 15;
+        } else if (canMoveHelpWithColorCompletion($wall, $move, 1)) {
+            bonusPoints = 10;
+        }
+        
+        int newScore = $move.getScore() + bonusPoints;
+        $move.setScore(newScore);
+end
+
+function boolean canMoveHelpWithColorCompletion(Tile[][] wall, Move move, int existingCount) {
+    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) return false;
+    
+    String moveColor = move.getTakenTiles().get(0).getColor();
+    if (moveColor == null || moveColor.isEmpty()) return false;
+    
+    int colorCount = 0;
+    for (int row = 0; row < wall.length; row++) {
+        for (int col = 0; col < wall[row].length; col++) {
+            if (wall[row][col] != null && moveColor.equals(wall[row][col].getColor()) && move.getTargetRow() != -1) {
+                colorCount++;
+            }
+        }
+    }
+    
+    return colorCount == existingCount;
+}
