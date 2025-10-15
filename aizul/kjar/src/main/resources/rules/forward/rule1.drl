@@ -11,4 +11,6 @@ rule "Row completion"
         eval(BoardUtils.completedRowContainsMoveTile($b, $m))
     then
         $m.setScore($m.getScore() + 5);
+        String message = "You can complete this row with this move.";
+        $m.addAppliedRule(true, message);
 end

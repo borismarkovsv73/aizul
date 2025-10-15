@@ -23,16 +23,23 @@ rule "Find Recursive Answer"
         insert(processed);
 
         int bonusPoints = 0;
+        int depth = 0;
         if (canMoveHelpWithRowCompletion($wall, $move.getTargetRow(), $move, 1)) {
             bonusPoints = 20;
+            depth = 1;
         } else if (canMoveHelpWithRowCompletion($wall, $move.getTargetRow(), $move, 2)) {
             bonusPoints = 15;
+            depth = 2;
         } else if (canMoveHelpWithRowCompletion($wall, $move.getTargetRow(), $move, 3)) {
             bonusPoints = 10;
+            depth = 3;
         }
         
         int newScore = $move.getScore() + bonusPoints;
         $move.setScore(newScore);
+        
+        String message = "In " + depth + " rounds you can complete this row on the wall.";
+        $move.addAppliedRule(true, message);
 end
 
 function boolean canMoveHelpWithRowCompletion(Tile[][] wall, int targetRow, Move move, int depth) {

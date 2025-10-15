@@ -13,4 +13,6 @@ rule "Floor overflow"
                 eval($fId != null && $tId != null && $fId.equals($tId)) )
     then
         $m.setScore($m.getScore() - 10);
+        String message = "You let one or more tiles fall to the floor with this move.";
+        $m.addAppliedRule(false, message);
 end
