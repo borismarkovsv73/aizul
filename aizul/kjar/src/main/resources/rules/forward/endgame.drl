@@ -17,11 +17,11 @@ rule "Strategic row completion"
         if (isAheadOfOpponents($player, $players)) {
             $m.setScore($m.getScore() + 15);
             String message = "You can end the game and win with this move.";
-            $m.addAppliedRule(false, message);
+            $m.addAppliedRule(true, message);
         } else {
             $m.setScore($m.getScore() - 15);
             String message = "You can end the game now with this move, but you will lose.";
-            $m.addAppliedRule(true, message);
+            $m.addAppliedRule(false, message);
         }
         
 end

@@ -1,0 +1,14 @@
+package rules.forward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Tile;
+
+rule "First player token bonus"
+    when
+        $m : Move($tiles : takenTiles)
+        exists( Tile(color == "lime") from $tiles )
+    then
+        $m.setScore($m.getScore() + 2);
+        String message = "You will go first next round (took the first player token).";
+        $m.addAppliedRule(true, message);
+end

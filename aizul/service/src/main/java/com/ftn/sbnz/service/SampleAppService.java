@@ -17,6 +17,7 @@ import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.dto.MoveDTO;
+import java.util.Map;
 
 
 @Service
@@ -151,6 +152,17 @@ public class SampleAppService {
 
 		int backwardRules = backwardSession.fireAllRules();
 		backwardSession.dispose();
+
+		for(Move move : possibleMoves) {
+			System.out.println(move.toString() + " => Score: " + move.getScore());
+			List<Map<Boolean, String>> appliedRules = move.getAppliedRules();
+			for(Map<Boolean, String> ruleDesc : appliedRules) {
+				System.out.println("   - " + ruleDesc);
+			}
+			if (move.getAppliedRules().isEmpty()) {
+				System.out.println("   (No rules applied)");
+			}
+		}
 		
 		// Sort and return best move
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
