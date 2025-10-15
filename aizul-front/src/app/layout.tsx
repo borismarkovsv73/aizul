@@ -79,11 +79,11 @@ export default function RootLayout({
             <GiGreekTemple className="mr-3" /> Home
           </Link>
           <Link
-            href="/board-demo"
+            href="/board-analysis"
             className={`
               font-medium transition-colors duration-200 px-4 py-3 rounded-lg w-full text-left mb-2
               flex items-center
-              ${isActive("/board-demo") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
+              ${isActive("/board-analysis") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
           >
             <MdOutlineScience className="mr-3" /> Board Analysis
