@@ -41,9 +41,13 @@
     --color-white-accent: #f4f4f4; /* border / shading */
 
     /* === Empty Space === */
-    --color-empty-light: #f0f0f0; /* very light gray */
+    --color-empty-light: #dbdbdb; /* very light gray */
     --color-empty-bold: #d8d8d8; /* medium light gray */
     --color-empty-accent: #cccccc; /* border / outline */
+
+    --color-lime-light: #f0f7d0; /* lighter lime smoothie green */
+    --color-lime-bold: #d2e86e; /* brighter version of previously light color */
+    --color-lime-accent: #a8b862; /* border */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -153,4 +157,15 @@ body {
 }
 .color-block-empty-accent-border {
     border: 2px solid var(--color-empty-accent);
+}
+
+/* Empty color variants */
+.color-block-lime-light {
+    background-color: var(--color-lime-light);
+}
+.color-block-lime-bold {
+    background-color: var(--color-lime-bold);
+}
+.color-block-lime-accent-border {
+    border: 2px solid var(--color-lime-accent);
 }
