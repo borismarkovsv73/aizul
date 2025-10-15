@@ -12,4 +12,6 @@ rule "Continue existing row"
         exists( Tile() from $rows.get($targetRow) )
     then
         $m.setScore($m.getScore() + 3);
+        String message = "You continue a row you've already been building with this move.";
+        $m.addAppliedRule(true, message);
 end

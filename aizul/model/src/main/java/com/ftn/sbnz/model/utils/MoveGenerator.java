@@ -52,15 +52,24 @@ public class MoveGenerator {
                 continue;
             }
             
+            // Check if this factory is center and has first player token
+            boolean centerHasLimeToken = factory.isCenter() && 
+                factory.getTiles().stream().anyMatch(tile -> tile != null && "lime".equals(tile.getColor()));
             // Group tiles by color in this factory
             Map<String, List<Tile>> tilesByColor = groupTilesByColor(factory.getTiles());
             
             // For each color available in this factory
             for (Map.Entry<String, List<Tile>> colorEntry : tilesByColor.entrySet()) {
+                String color = colorEntry.getKey();
                 List<Tile> tilesOfColor = colorEntry.getValue();
                 
+                // Skip lime tiles as they are first player tokens, not placeable tiles
+                if ("lime".equals(color)) {
+                    continue;
+                }
+                
                 // Generate valid moves for each target row
-                List<Move> movesForColor = generateValidMovesForTileColor(factory, tilesOfColor, board);
+                List<Move> movesForColor = generateValidMovesForTileColor(factory, tilesOfColor, board, centerHasLimeToken);
                 validMoves.addAll(movesForColor);
             }
         }
@@ -71,32 +80,49 @@ public class MoveGenerator {
     /**
      * Generates valid moves for a specific tile color from a factory
      */
-    private static List<Move> generateValidMovesForTileColor(Factory factory, List<Tile> tilesOfColor, Board board) {
+    private static List<Move> generateValidMovesForTileColor(Factory factory, List<Tile> tilesOfColor, Board board, boolean centerHasLimeToken) {
         List<Move> moves = new ArrayList<>();
         String color = tilesOfColor.get(0).getColor();
         
         // Check all possible target rows - only add if valid
         for (int rowIndex = 0; rowIndex < board.getRows().size(); rowIndex++) {
             if (isValidPlacement(board, rowIndex, color, tilesOfColor.size())) {
-                Move move = createMove(factory.getId(), tilesOfColor, rowIndex);
+                Move move = createMove(factory.getId(), tilesOfColor, rowIndex, centerHasLimeToken, factory);
                 moves.add(move);
             }
         }
         
         // Always add floor line option (row -1) as it's always valid
-        Move floorMove = createMove(factory.getId(), tilesOfColor, -1);
+        Move floorMove = createMove(factory.getId(), tilesOfColor, -1, centerHasLimeToken, factory);
         moves.add(floorMove);
         
         return moves;
     }
     
     /**
-     * Creates a Move object with the given parameters
+     * Creates a Move object with the given parameters. If the move is from center factory
+     * and lime token exists, includes the lime token in the taken tiles.
      */
-    private static Move createMove(Long factoryId, List<Tile> tiles, int targetRow) {
+    private static Move createMove(Long factoryId, List<Tile> tiles, int targetRow, boolean centerHasLimeToken, Factory factory) {
         Move move = new Move();
         move.setFactoryId(factoryId);
-        move.setTakenTiles(new ArrayList<>(tiles));
+        
+        // Copy the tiles
+        List<Tile> allTiles = new ArrayList<>(tiles);
+        
+        // If this is from center factory and lime token exists, add it to the move
+        if (centerHasLimeToken) {
+            Tile limeToken = factory.getTiles().stream()
+                .filter(tile -> tile != null && "lime".equals(tile.getColor()))
+                .findFirst()
+                .orElse(null);
+                
+            if (limeToken != null) {
+                allTiles.add(limeToken);
+            }
+        }
+        
+        move.setTakenTiles(allTiles);
         move.setTargetRow(targetRow);
         move.setScore(0); // Initialize score to 0
         return move;
@@ -186,7 +212,16 @@ public class MoveGenerator {
     }
     
     /**
-     * Calculates the number of tiles that would go to the floor line for a given move
+     * Calculates the number of tiles that would go to the floor line for a given move.
+     * This includes the first player token (lime) if present in taken tiles.
+     * 
+     * Note: This method calculates the total tiles going to floor regardless of current
+     * floor capacity. All moves are legal in Azul even if the floor is full - excess
+     * tiles beyond floor capacity are simply discarded without additional penalty.
+     * 
+     * @param board The current board state
+     * @param move The move to calculate floor tiles for
+     * @return Total number of tiles that would go to the floor (may exceed floor capacity)
      */
     public static int calculateFloorTiles(Board board, Move move) {
         if (move.getTargetRow() == -1) {
@@ -194,11 +229,24 @@ public class MoveGenerator {
             return move.getTakenTiles().size();
         }
         
+        // Count regular tiles (non-lime) that can be placed
+        int regularTiles = (int) move.getTakenTiles().stream()
+            .filter(tile -> tile != null && !"lime".equals(tile.getColor()))
+            .count();
+            
+        // Count lime tiles (they always go to floor)
+        int limeTiles = (int) move.getTakenTiles().stream()
+            .filter(tile -> tile != null && "lime".equals(tile.getColor()))
+            .count();
+        
         List<Tile> targetRow = board.getRows().get(move.getTargetRow());
         int maxCapacity = move.getTargetRow() + 1;
         int currentTiles = (int) targetRow.stream().filter(tile -> tile != null).count();
         int availableSpace = maxCapacity - currentTiles;
         
-        return Math.max(0, move.getTakenTiles().size() - availableSpace);
+        // Regular tiles that don't fit + all lime tiles go to floor
+        int regularTilesToFloor = Math.max(0, regularTiles - availableSpace);
+        
+        return regularTilesToFloor + limeTiles;
     }
 }

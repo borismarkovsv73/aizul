@@ -16,6 +16,7 @@ import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.dto.MoveDTO;
 
 
 @Service
@@ -110,5 +111,59 @@ public class SampleAppService {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getClassifiedItem'");
     }
+
+	public MoveDTO getBestMove(GameState gameState) throws Exception {
+		Player currentPlayer = gameState.getPlayers().get(0);
+		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(gameState, currentPlayer);
+		
+		for (Move move : possibleMoves) {
+			move.setScore(0);
+		}
+		
+		// 1. Apply forward chaining for tactical analysis
+		int forwardRulesFired = 0;
+		for (Move move : possibleMoves) {
+			KieSession forwardSession = kieContainer.newKieSession("forwardSession");
+
+			Board originalBoard = currentPlayer.getBoard();
+			Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
+			BoardUtils.applyMoveToBoard(boardAfterMove, move);
+
+			forwardSession.insert(move);
+			forwardSession.insert(boardAfterMove);
+			forwardSession.insert(gameState);
+			forwardSession.insert(currentPlayer);
+
+			forwardRulesFired += forwardSession.fireAllRules();
+			forwardSession.dispose();
+		}
+		
+		// 2. Apply backward chaining for strategic analysis
+		KieSession backwardSession = kieContainer.newKieSession("combinedBackwardSession");
+		Board currentBoard = currentPlayer.getBoard();
+		backwardSession.insert(currentBoard);
+		backwardSession.insert(gameState);
+		backwardSession.insert(currentPlayer);
+		
+		for (Move move : possibleMoves) {
+			backwardSession.insert(move);
+		}
+
+		int backwardRules = backwardSession.fireAllRules();
+		backwardSession.dispose();
+		
+		// Sort and return best move
+		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
+		
+		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules");
+		
+		if (!possibleMoves.isEmpty()) {
+			Move bestMove = possibleMoves.get(0);
+			System.out.println("Best move: " + bestMove.toString() + " (Score: " + bestMove.getScore() + ")");
+			return new MoveDTO(bestMove, bestMove.toString());
+		}
+		
+		return null;
+	}
 
 }

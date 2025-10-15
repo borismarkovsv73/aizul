@@ -111,7 +111,7 @@
 					"color": "red"
 				}
 			],
-			"center": false
+			"isCenter": false
 		},
 		{
 			"id": 2,
@@ -129,7 +129,7 @@
 					"color": "blue"
 				}
 			],
-			"center": false
+			"isCenter": false
 		},
 		{
 			"id": 3,
@@ -145,9 +145,13 @@
 				{
 					"id": 9,
 					"color": "white"
+				},
+				{
+					"id": 99,
+					"color": "lime"
 				}
 			],
-			"center": true
+			"isCenter": true
 		}
 	],
 	"bag": [
