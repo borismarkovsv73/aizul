@@ -28,8 +28,8 @@ public class Factory {
         return isCenter;
     }
 
-    public void setCenter(boolean center) {
-        isCenter = center;
+    public void setIsCenter(boolean isCenter) {
+        this.isCenter = isCenter;
     }
 
     public List<Tile> getTiles() {

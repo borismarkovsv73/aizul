@@ -5,35 +5,60 @@ import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Tile;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class BoardUtils {
+    
+    /**
+     * Applies a move to the board. Lime tokens automatically go to the floor,
+     * regular tiles go to the target row or floor if overflow.
+     */
     public static void applyMoveToBoard(Board board, Move move) {
         List<Tile> takenTiles = move.getTakenTiles();
         int targetRow = move.getTargetRow();
 
         if (targetRow == -1) {
+            // All tiles go to floor
             placeTilesOnFloor(board, takenTiles);
             return;
         }
         
+        // Separate lime tokens (they always go to floor) from regular tiles
+        List<Tile> regularTiles = new ArrayList<>();
+        List<Tile> limeTokens = new ArrayList<>();
+        
+        for (Tile tile : takenTiles) {
+            if (tile != null && "lime".equals(tile.getColor())) {
+                limeTokens.add(tile);
+            } else {
+                regularTiles.add(tile);
+            }
+        }
+        
+        // Place lime tokens directly on floor
+        if (!limeTokens.isEmpty()) {
+            placeTilesOnFloor(board, limeTokens);
+        }
+        
+        // Handle regular tiles placement on the target row
         List<Tile> row = board.getRows().get(targetRow);
-
         int maxRowCapacity = targetRow + 1;
         int currentTilesInRow = (int) row.stream().filter(tile -> tile != null).count();
         int availableSpace = maxRowCapacity - currentTilesInRow;
 
-        int tilesPlacedOnRow = Math.min(availableSpace, takenTiles.size());
+        int tilesPlacedOnRow = Math.min(availableSpace, regularTiles.size());
         for (int i = 0; i < tilesPlacedOnRow; i++) {
             for (int j = 0; j < row.size(); j++) {
                 if (row.get(j) == null) {
-                    row.set(j, takenTiles.get(i));
+                    row.set(j, regularTiles.get(i));
                     break;
                 }
             }
         }
 
-        if (tilesPlacedOnRow < takenTiles.size()) {
-            List<Tile> overflowTiles = takenTiles.subList(tilesPlacedOnRow, takenTiles.size());
+        // Place overflow regular tiles on floor
+        if (tilesPlacedOnRow < regularTiles.size()) {
+            List<Tile> overflowTiles = regularTiles.subList(tilesPlacedOnRow, regularTiles.size());
             placeTilesOnFloor(board, overflowTiles);
         }
     }
