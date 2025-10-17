@@ -1,0 +1,92 @@
+package rules.backward_enemy
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+
+query "recursiveEnemyColumnTileChain"( Move move, Board enemyBoard, Integer tilesOnColumn )
+  eval(canEnemyCompleteColumnWithMove(enemyBoard.getWall(), move, tilesOnColumn))
+  or
+  ( eval(tilesOnColumn < 4) and recursiveEnemyColumnTileChain( move, enemyBoard, tilesOnColumn + 1; ) )
+end
+
+rule "Block Enemy Column Progress"
+    salience 85
+    no-loop true
+    when
+        $move : Move()
+        $board : Board()
+        $player : Player($playerId : id, board == $board, $playerScore : score)
+        $enemyPlayer : Player(id != $playerId, $enemyBoard : board, $enemyScore : score)
+        recursiveEnemyColumnTileChain( $move, $enemyBoard, 2; )
+        not String(this == "ENEMY_COLUMN_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId())
+    then
+        String processed = "ENEMY_COLUMN_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId();
+        insert(processed);
+
+        System.out.println("=== ENEMY COLUMN BLOCKING RULE FIRED ===");
+        System.out.println("Player ID: " + $player.getId() + " Score: " + $playerScore);
+        System.out.println("Enemy ID: " + $enemyPlayer.getId() + " Score: " + $enemyScore);
+        System.out.println("Move: " + $move.toString());
+
+        int bonusPoints = 0;
+        int tilesOnColumn = 0;
+        Tile[][] enemyWall = $enemyBoard.getWall();
+
+        if (canEnemyCompleteColumnWithMove(enemyWall, $move, 4)) {
+            bonusPoints = 15;
+            tilesOnColumn = 4;
+        } else if (canEnemyCompleteColumnWithMove(enemyWall, $move, 3)) {
+            bonusPoints = 10;
+            tilesOnColumn = 3;
+        } else if (canEnemyCompleteColumnWithMove(enemyWall, $move, 2)) {
+            bonusPoints = 5;
+            tilesOnColumn = 2;
+        }
+
+        int newScore = $move.getScore() + bonusPoints;
+        $move.setScore(newScore);
+        System.out.println($move.toString());
+        System.out.println("This move blocks enemy from completing a column! Points bonus:");
+        System.out.println(bonusPoints);
+        String message = "This move blocks enemy from completing a column!";
+        $move.addAppliedRule(true, message);
+end
+
+function boolean canEnemyCompleteColumnWithMove(Tile[][] enemyWall, Move move, int filledTiles) {
+    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) return false;
+
+    String moveColor = move.getTakenTiles().get(0).getColor();
+    if (moveColor == null || moveColor.isEmpty()) return false;
+
+    // Check each column in the enemy's wall
+    for (int col = 0; col < enemyWall[0].length; col++) {
+        int filledCount = 0;
+        boolean colorAlreadyInColumn = false;
+        boolean hasEmptySpot = false;
+
+        // Count filled tiles and check if this color is already in this column
+        for (int row = 0; row < enemyWall.length; row++) {
+            if (enemyWall[row][col] != null) {
+                filledCount++;
+                // Check if the color is already in this column
+                if (enemyWall[row][col].getColor() != null &&
+                    enemyWall[row][col].getColor().equals(moveColor)) {
+                    colorAlreadyInColumn = true;
+                }
+            } else {
+                hasEmptySpot = true;
+            }
+        }
+
+        // If this column has the right number of filled tiles AND has empty spots
+        // AND this color is NOT already in the column, then the enemy could use this color to complete it
+        if (filledCount == filledTiles && hasEmptySpot && !colorAlreadyInColumn) {
+            return true;
+        }
+    }
+
+    return false;
+}

@@ -1,0 +1,144 @@
+{
+	"id": 1,
+	"players": [
+		{
+			"id": 1,
+			"board": {
+				"id": 1,
+				"rows": [
+					[null],
+					[
+						{
+							"id": 50,
+							"color": "blue"
+						},
+						null
+					],
+					[
+						{
+							"id": 32,
+							"color": "red"
+						},
+						{
+							"id": 33,
+							"color": "red"
+						},
+						null
+					],
+					[null, null, null, null],
+					[null, null, null, null, null]
+				],
+				"wall": [
+					[{ "id": 101, "color": "blue" }, { "id": 102, "color": "yellow" }, null, null, null],
+					[null, { "id": 105, "color": "red" }, null, null, null],
+					[null, null, { "id": 108, "color": "blue" }, null, null],
+					[null, null, null, null, null],
+					[null, null, null, null, null]
+				],
+				"floor": [null, null, null, null, null, null, null]
+			},
+			"score": 50
+		},
+		{
+			"id": 2,
+			"board": {
+				"id": 2,
+				"rows": [
+					[null],
+					[null, null],
+					[null, null, null],
+					[null, null, null, null],
+					[null, null, null, null, null]
+				],
+				"wall": [
+					[{ "id": 201, "color": "blue" }, { "id": 202, "color": "yellow" }, { "id": 203, "color": "red" }, { "id": 204, "color": "black" }, null],
+					[{ "id": 205, "color": "yellow" }, { "id": 206, "color": "red" }, { "id": 207, "color": "white" }, null, null],
+					[{ "id": 208, "color": "red" }, { "id": 209, "color": "white" }, null, null, null],
+					[null, null, null, null, null],
+					[null, null, null, null, null]
+				],
+				"floor": [null, null, null, null, null, null, null]
+			},
+			"score": 30
+		}
+	],
+	"factories": [
+		{
+			"id": 1,
+			"tiles": [
+				{
+					"id": 1,
+					"color": "white"
+				},
+				{
+					"id": 2,
+					"color": "white"
+				},
+				{
+					"id": 3,
+					"color": "red"
+				}
+			],
+			"isCenter": false
+		},
+		{
+			"id": 2,
+			"tiles": [
+				{
+					"id": 4,
+					"color": "black"
+				},
+				{
+					"id": 5,
+					"color": "yellow"
+				},
+				{
+					"id": 6,
+					"color": "blue"
+				}
+			],
+			"isCenter": false
+		},
+		{
+			"id": 3,
+			"tiles": [
+				{
+					"id": 7,
+					"color": "red"
+				},
+				{
+					"id": 8,
+					"color": "blue"
+				},
+				{
+					"id": 9,
+					"color": "white"
+				},
+				{
+					"id": 99,
+					"color": "lime"
+				}
+			],
+			"isCenter": true
+		}
+	],
+	"bag": [
+		{
+			"id": 20,
+			"color": "red"
+		},
+		{
+			"id": 21,
+			"color": "blue"
+		},
+		{
+			"id": 22,
+			"color": "yellow"
+		},
+		{
+			"id": 23,
+			"color": "white"
+		}
+	],
+	"roundNumber": 3
+}
