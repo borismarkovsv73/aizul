@@ -35,6 +35,14 @@ const Floor = () => {
       }
     }
 
+    const emptySearch = blockColors.find(
+      (color, idx) => idx < index && color == "empty",
+    );
+    if (emptySearch) {
+      alert("There is an empty spot before this one, fill those up first!");
+      return false;
+    }
+
     // Update the specific block color
     setBlockColors((prev) => {
       const newColors = [...prev];
