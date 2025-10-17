@@ -1,0 +1,63 @@
+package rules.forward
+
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+import java.util.List;
+
+rule "Block Enemy Color"
+    when
+        $m : Move($takenTiles : takenTiles)
+        $b : Board()
+        $player : Player(board == $b)
+        $gameState : GameState($players : players)
+        $enemy : Player(id != $player.getId(), $enemyBoard : board) from $players
+        eval(enemyHasUnfinishedRowWithColor($enemyBoard, $takenTiles.get(0).getColor()))
+    then
+        $m.setScore($m.getScore() + 8);
+        String message = "Blocking enemy's needed color - they have unfinished rows with this color!";
+        $m.addAppliedRule(true, message);
+end
+
+function boolean enemyHasUnfinishedRowWithColor(Board enemyBoard, String color) {
+    if (color == null || color.isEmpty() || enemyBoard == null) {
+        return false;
+    }
+
+    List<List<Tile>> enemyRows = enemyBoard.getRows();
+    if (enemyRows == null) {
+        return false;
+    }
+
+    // Check each pattern row
+    for (int i = 0; i < enemyRows.size(); i++) {
+        List<Tile> row = enemyRows.get(i);
+        if (row == null) {
+            continue;
+        }
+
+        // Check if this row has tiles of the color we're taking
+        for (Tile tile : row) {
+            if (tile != null && tile.getColor() != null && tile.getColor().equals(color)) {
+                // Found an unfinished row with this color!
+                // Check if the row is not full (unfinished)
+                int maxCapacity = i + 1; // Row 0 holds 1 tile, row 1 holds 2, etc.
+                int filledCount = 0;
+                for (Tile t : row) {
+                    if (t != null) {
+                        filledCount++;
+                    }
+                }
+
+                // If row is not at max capacity, it's unfinished
+                if (filledCount < maxCapacity) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}

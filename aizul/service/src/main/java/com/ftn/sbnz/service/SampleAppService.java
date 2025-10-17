@@ -36,9 +36,9 @@ public class SampleAppService {
 	public List<Move> forwardChain() throws Exception{
 		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_combined_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
-		
+
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
-		
+
 		for (Move move : possibleMoves) {
 			KieSession kieSession = kieContainer.newKieSession("forwardSession");
 
@@ -51,15 +51,15 @@ public class SampleAppService {
 			kieSession.insert(mockGameState);
 			kieSession.insert(currentPlayer);
 
-			kieSession.fireAllRules();			
+			kieSession.fireAllRules();
 			kieSession.dispose();
 		}
 
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
-		
+
 		for (int i = 0; i < Math.min(10, possibleMoves.size()); i++) {
 			Move move = possibleMoves.get(i);
-			System.out.println(String.format("Rank %2d: %s - Score: %d", 
+			System.out.println(String.format("Rank %2d: %s - Score: %d",
 				(i+1), move.toString(), move.getScore()));
 		}
 
@@ -67,38 +67,64 @@ public class SampleAppService {
 	}
 
 	public List<Move> unifiedBackwardChainTest() throws Exception {
-		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_combined_test.json");
+		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("enemy_endgame_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
+		Player enemyPlayer = mockGameState.getPlayers().get(1);
+		System.out.println(enemyPlayer.getBoard().toString());
+		System.out.println("PA TU SAM MAJKU MU");
 
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
-		
+
 		System.out.println("Generated " + possibleMoves.size() + " possible moves for testing");
-		
+
 		KieSession unifiedSession = kieContainer.newKieSession("combinedBackwardSession");
 
 		Board testBoard = currentPlayer.getBoard();
-		
+
 		unifiedSession.insert(testBoard);
 		unifiedSession.insert(mockGameState);
 		unifiedSession.insert(currentPlayer);
-		
+
 		for (Move move : possibleMoves) {
 			move.setScore(0); // Reset scores
 			unifiedSession.insert(move);
 		}
 
 		int totalRules = unifiedSession.fireAllRules();
-		System.out.println("Unified backward chaining fired " + totalRules + " rules total");
-		unifiedSession.dispose();
+			System.out.println("Unified backward chaining fired " + totalRules + " rules total");
+			unifiedSession.dispose();
 
-		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
-		
+			// Enemy backward chaining session
+			KieSession enemySession = kieContainer.newKieSession("combinedBackwardSessionEnemy");
+
+			Board currentBoard = currentPlayer.getBoard();
+			enemySession.insert(currentBoard);
+			enemySession.insert(mockGameState);
+			enemySession.insert(currentPlayer);
+
+			// Insert enemy player(s)
+			for (Player player : mockGameState.getPlayers()) {
+				if (!player.getId().equals(currentPlayer.getId())) {
+					enemySession.insert(player);
+				}
+			}
+
+			for (Move move : possibleMoves) {
+				enemySession.insert(move);
+			}
+
+			int enemyRules = enemySession.fireAllRules();
+			System.out.println("Enemy backward chaining fired " + enemyRules + " rules total");
+			enemySession.dispose();
+
+			possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
+
 		for (int i = 0; i < Math.min(10, possibleMoves.size()); i++) {
 			Move move = possibleMoves.get(i);
-			System.out.println(String.format("Rank %2d: %s - Score: %d", 
+			System.out.println(String.format("Rank %2d: %s - Score: %d",
 				(i+1), move.toString(), move.getScore()));
 		}
-		
+
 		System.out.println("\nTop move analysis:");
 		if (!possibleMoves.isEmpty()) {
 			Move topMove = possibleMoves.get(0);
@@ -116,11 +142,11 @@ public class SampleAppService {
 	public MoveDTO getBestMove(GameState gameState) throws Exception {
 		Player currentPlayer = gameState.getPlayers().get(0);
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(gameState, currentPlayer);
-		
+
 		for (Move move : possibleMoves) {
 			move.setScore(0);
 		}
-		
+
 		// 1. Apply forward chaining for tactical analysis
 		int forwardRulesFired = 0;
 		for (Move move : possibleMoves) {
@@ -135,23 +161,51 @@ public class SampleAppService {
 			forwardSession.insert(gameState);
 			forwardSession.insert(currentPlayer);
 
+			// Insert enemy player(s) for blocking rules
+			for (Player player : gameState.getPlayers()) {
+				if (!player.getId().equals(currentPlayer.getId())) {
+					forwardSession.insert(player);
+				}
+			}
+
 			forwardRulesFired += forwardSession.fireAllRules();
 			forwardSession.dispose();
 		}
-		
+
 		// 2. Apply backward chaining for strategic analysis
 		KieSession backwardSession = kieContainer.newKieSession("combinedBackwardSession");
 		Board currentBoard = currentPlayer.getBoard();
 		backwardSession.insert(currentBoard);
 		backwardSession.insert(gameState);
 		backwardSession.insert(currentPlayer);
-		
+
 		for (Move move : possibleMoves) {
 			backwardSession.insert(move);
 		}
 
 		int backwardRules = backwardSession.fireAllRules();
 		backwardSession.dispose();
+
+		// 3. Apply enemy backward chaining
+		KieSession enemySession = kieContainer.newKieSession("combinedBackwardSessionEnemy");
+
+		enemySession.insert(currentBoard);
+		enemySession.insert(gameState);
+		enemySession.insert(currentPlayer);
+
+		// Insert enemy player(s)
+		for (Player player : gameState.getPlayers()) {
+			if (!player.getId().equals(currentPlayer.getId())) {
+				enemySession.insert(player);
+			}
+		}
+
+		for (Move move : possibleMoves) {
+			enemySession.insert(move);
+		}
+
+		int enemyRules = enemySession.fireAllRules();
+		enemySession.dispose();
 
 		for(Move move : possibleMoves) {
 			System.out.println(move.toString() + " => Score: " + move.getScore());
@@ -163,18 +217,18 @@ public class SampleAppService {
 				System.out.println("   (No rules applied)");
 			}
 		}
-		
+
 		// Sort and return best move
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
-		
-		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules");
-		
+
+		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules, " + enemyRules + " enemy rules");
+
 		if (!possibleMoves.isEmpty()) {
 			Move bestMove = possibleMoves.get(0);
 			System.out.println("Best move: " + bestMove.toString() + " (Score: " + bestMove.getScore() + ")");
 			return new MoveDTO(bestMove, bestMove.toString());
 		}
-		
+
 		return null;
 	}
 

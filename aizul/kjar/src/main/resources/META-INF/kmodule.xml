@@ -5,4 +5,7 @@
   <kbase name="combinedBackwardBase" packages="rules.backward">
     <ksession name="combinedBackwardSession"/>
   </kbase>
+  <kbase name="combinedBackwardBaseEnemy" packages="rules.backward_enemy">
+    <ksession name="combinedBackwardSessionEnemy"/>
+  </kbase>
 </kmodule>
