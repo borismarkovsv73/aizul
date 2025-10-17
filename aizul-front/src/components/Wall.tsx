@@ -15,15 +15,16 @@ const GRID_SIZE = 5;
 
 const Wall = () => {
   return (
-    <div className={`flex flex-col gap-2 p-4 bg-gray-100 rounded-lg w-[450px]`}>
+    <div className={`flex flex-col gap-2 p-4 bg-gray-100 rounded-lg w-[450px]`} data-component="wall">
       {DEFAULT_PATTERN.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex flex-row gap-2 w-full">
+        <div key={rowIndex} className="flex flex-row gap-2 w-full" data-wall-row={rowIndex}>
           {row.map((colorName, colIndex) => {
             return (
               <div
                 key={colIndex}
                 className="aspect-square w-1/5 relative"
                 style={{ padding: "0.25rem" }}
+                data-wall-col={colIndex}
               >
                 <ColorBlock
                   colorName={colorName}

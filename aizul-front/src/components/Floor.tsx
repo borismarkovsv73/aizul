@@ -38,7 +38,7 @@ const Floor = () => {
     const emptySearch = blockColors.find(
       (color, idx) => idx < index && color == "empty",
     );
-    if (emptySearch) {
+    if (emptySearch && newColor !== "empty") {
       alert("There is an empty spot before this one, fill those up first!");
       return false;
     }
@@ -54,9 +54,9 @@ const Floor = () => {
   };
 
   return (
-    <div className="flex flex-col justify-between p-4 bg-gray-100 rounded-lg h-[450px]">
+    <div className="flex flex-col justify-between p-4 bg-gray-100 rounded-lg h-[450px]" data-component="floor">
       {Array.from({ length: BLOCKS }).map((_, idx) => (
-        <div key={idx} className="flex flex-row items-center gap-4">
+        <div key={idx} className="flex flex-row items-center gap-4" data-floor-slot={idx}>
           <div
             className="aspect-square w-12 relative"
             style={{ padding: "0.25rem" }}

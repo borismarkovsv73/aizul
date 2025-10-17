@@ -53,10 +53,10 @@ const Rows = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2 p-4 bg-gray-100 rounded-lg w-[450px] h-[450px]">
+    <div className="flex flex-col gap-2 p-4 bg-gray-100 rounded-lg w-[450px] h-[450px]" data-component="rows">
       {Array.from({ length: GRID_SIZE }).map((_, rowIndex) => {
         return (
-          <div key={rowIndex} className="flex flex-row items-center w-full">
+          <div key={rowIndex} className="flex flex-row items-center w-full" data-row={rowIndex}>
             {/* Blocks container */}
             <div className="flex flex-row w-[450px]">
               {Array.from({ length: GRID_SIZE }).map((_, colIndex) => {
@@ -65,6 +65,7 @@ const Rows = () => {
                     key={colIndex}
                     className="aspect-square w-1/5 relative"
                     style={{ padding: "0.25rem" }}
+                    data-col={colIndex}
                   >
                     {colIndex < GRID_SIZE - rowIndex - 1 ? (
                       <div className="w-full h-full" />

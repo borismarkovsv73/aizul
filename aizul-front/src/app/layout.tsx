@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const elektra = localFont({
+export const elektra = localFont({
   src: [
     {
       path: "../../public/fonts/elektra.ttf",
@@ -48,7 +48,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="{elektra.variable}">
+    <html lang="en">
       <head>
         <title>AIZUL - Azul Agent</title>
         <link rel="icon" href="/favicon.ico" />

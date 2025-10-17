@@ -73,6 +73,12 @@ public class Move {
 
     @Override
     public String toString() {
-        return "Take " + takenTiles.size() + " " + takenTiles.get(0).toString() + " tiles from factory " + factoryId + " and place in row " + targetRow;
+        int amount = takenTiles.size();
+        boolean hasLimeTile = takenTiles.stream().anyMatch(tile -> "lime".equals(tile.getColor()));
+        if (hasLimeTile) {
+            amount = takenTiles.size() - 1;
+        }
+        
+        return "Take " + amount + " " + takenTiles.get(0).toString() + " tiles from factory " + factoryId + " and place in row " + targetRow;
     }
 }
