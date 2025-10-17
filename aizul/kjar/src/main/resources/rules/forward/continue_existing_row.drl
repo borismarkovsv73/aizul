@@ -9,7 +9,8 @@ rule "Continue existing row"
         $m : Move($targetRow : targetRow)
         $b : Board($rows : rows)
         eval($targetRow >= 0)
-        exists( Tile() from $rows.get($targetRow) )
+        $targetRowList : java.util.List() from $rows.get($targetRow)
+        eval($targetRowList != null && $targetRowList.size() > 1)
     then
         $m.setScore($m.getScore() + 3);
         String message = "You continue a row you've already been building with this move.";
