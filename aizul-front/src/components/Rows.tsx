@@ -13,7 +13,11 @@ type ColorName =
 
 const GRID_SIZE = 5;
 
-const Rows = () => {
+interface RowsProps {
+  highlightedRow?: number | null;
+}
+
+const Rows: React.FC<RowsProps> = ({ highlightedRow }) => {
   // Track the color state of each cell [rowIndex][colIndex]
   const [gridColors, setGridColors] = useState<ColorName[][]>(
     Array.from({ length: GRID_SIZE }, () =>
@@ -56,7 +60,9 @@ const Rows = () => {
     <div className="flex flex-col gap-2 p-4 bg-gray-100 rounded-lg w-[450px] h-[450px]" data-component="rows">
       {Array.from({ length: GRID_SIZE }).map((_, rowIndex) => {
         return (
-          <div key={rowIndex} className="flex flex-row items-center w-full" data-row={rowIndex}>
+          <div key={rowIndex} className={`flex flex-row items-center w-full transition-all duration-300 rounded-lg ${
+            highlightedRow === rowIndex ? 'shadow-green-400 shadow-lg ring-4 ring-green-300/40' : ''
+          }`} data-row={rowIndex}>
             {/* Blocks container */}
             <div className="flex flex-row w-[450px]">
               {Array.from({ length: GRID_SIZE }).map((_, colIndex) => {

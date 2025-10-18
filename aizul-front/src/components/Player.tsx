@@ -7,7 +7,11 @@ import Floor from "@/components/Floor";
 import ScoreInput from "@/components/ScoreInput";
 import { MdArrowForwardIos } from "react-icons/md";
 
-export default function Player() {
+interface PlayerProps {
+  highlightedRow?: number | null;
+}
+
+export default function Player({ highlightedRow }: PlayerProps) {
   return (
     <div className="flex flex-col items-center p-8" data-component="player">
       <div className="w-[900px] flex flex-col items-center">
@@ -18,14 +22,14 @@ export default function Player() {
         
         <div className="flex flex-row justify-center items-start gap-5 w-full">
           <div className="w-[450px]" data-component="rows-container">
-            <Rows />
+            <Rows highlightedRow={highlightedRow} />
           </div>
 
           <div className="w-[450px]" data-component="wall-container">
             <Wall />
           </div>
           <div data-component="floor-container">
-            <Floor />
+            <Floor isHighlighted={highlightedRow === -1} />
           </div>
         </div>
       </div>

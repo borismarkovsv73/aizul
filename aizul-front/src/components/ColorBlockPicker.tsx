@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 type ColorName =
   | "red"
@@ -108,9 +109,10 @@ const ColorBlock: React.FC<ColorBlockProps> = ({
       </div>
 
       {/* Modal */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div
-          className="fixed inset-0 flex items-center justify-center z-50"
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: 9999 }}
           onClick={handleModalClose}
         >
           <div
@@ -120,6 +122,7 @@ const ColorBlock: React.FC<ColorBlockProps> = ({
               left: `${Math.min(Math.max(modalPosition.x, 150), window.innerWidth - 150)}px`,
               top: `${Math.min(Math.max(modalPosition.y, 200), window.innerHeight - 200)}px`,
               transform: "translate(-50%, -50%)",
+              zIndex: 10000,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -173,7 +176,8 @@ const ColorBlock: React.FC<ColorBlockProps> = ({
               Cancel
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

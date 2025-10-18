@@ -10,7 +10,7 @@ rule "Strategic row completion"
     when
         $m : Move($targetRow : targetRow)
         $b : Board($wall : wall)
-        $player : Player($currentScore : score, $board : board)
+        $player : Player(id == 1, $currentScore : score, board == $b)
         $gameState : GameState($players : players)
         eval($targetRow >= 0 && willCompleteWallRow($wall, $targetRow))
     then
@@ -23,7 +23,6 @@ rule "Strategic row completion"
             String message = "You can end the game now with this move, but you will lose.";
             $m.addAppliedRule(false, message);
         }
-        
 end
 
 function boolean willCompleteWallRow(Tile[][] wall, int targetRow) {

@@ -11,6 +11,7 @@ import Image from "next/image";
 import { GiGreekTemple } from "react-icons/gi";
 import { BsFillGrid3X3GapFill } from "react-icons/bs";
 import { MdOutlineScience } from "react-icons/md";
+import { FaGithub } from "react-icons/fa";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,7 +54,7 @@ export default function RootLayout({
         <title>AIZUL - Azul Agent</title>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={`antialiased flex`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${elektra.variable} antialiased flex`}>
         <nav
           className={`${elektra.className} fixed top-0 left-0 flex flex-col items-start p-6 bg-layout-bg shadow-lg rounded-tr-xl rounded-br-xl w-64 min-h-screen h-screen text-layout-text`}
         >
@@ -65,7 +66,7 @@ export default function RootLayout({
               height={150}
             />
           </div>
-          <div className="mb-8 mt-1 text-3xl font-bold flex justify-center w-full">
+          <div className="mb-8 mt-1 text-3xl font-bold flex justify-center w-full" style={{ letterSpacing: '0.05em' }}>
             Aizul
           </div>
           <Link
@@ -75,8 +76,9 @@ export default function RootLayout({
               flex items-center
               ${isActive("/") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
+            style={{ letterSpacing: '0.05em' }}
           >
-            <GiGreekTemple className="mr-3" /> Home
+            <GiGreekTemple className="mr-3" /> Welcome
           </Link>
           <Link
             href="/board-analysis"
@@ -85,8 +87,18 @@ export default function RootLayout({
               flex items-center
               ${isActive("/board-analysis") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
+            style={{ letterSpacing: '0.05em' }}
           >
             <MdOutlineScience className="mr-3" /> Board Analysis
+          </Link>
+          <Link
+            href="https://github.com/borismarkovsv73/aizul"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium transition-colors duration-200 px-4 py-3 rounded-lg w-full text-left mb-2 flex items-center hover:bg-layout-light-accent"
+            style={{ letterSpacing: '0.1em' }}
+          >
+            <FaGithub className="mr-3" /> GitHub
           </Link>
         </nav>
         <div className="flex-1 p-8 text-center text-gray-600 ml-64">

@@ -3,16 +3,40 @@ package rules.forward
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
 
 rule "Continue existing row"
     when
-        $m : Move($targetRow : targetRow)
+        $m : Move($targetRow : targetRow, $takenTiles : takenTiles)
         $b : Board($rows : rows)
-        eval($targetRow >= 0)
-        $targetRowList : java.util.List() from $rows.get($targetRow)
-        eval($targetRowList != null && $targetRowList.size() > 1)
+        eval($targetRow >= 0 && $takenTiles != null && $takenTiles.size() > 0)
+        eval(checkContinueExistingRow($rows, $targetRow, $takenTiles))
     then
         $m.setScore($m.getScore() + 3);
         String message = "You continue a row you've already been building with this move.";
         $m.addAppliedRule(true, message);
 end
+
+function int countNonNullTiles(java.util.List rowTiles) {
+    if (rowTiles == null) return 0;
+    
+    int count = 0;
+    for (Object tile : rowTiles) {
+        if (tile != null) {
+            count++;
+        }
+    }
+    return count;
+}
+
+function boolean checkContinueExistingRow(java.util.List rows, int targetRow, java.util.List takenTiles) {
+    if (targetRow < 0 || targetRow >= rows.size() || takenTiles == null) {
+        return false;
+    }
+    
+    java.util.List targetRowList = (java.util.List) rows.get(targetRow);
+    int rowTileCount = countNonNullTiles(targetRowList);
+    int takenTileCount = takenTiles.size();
+    
+    return rowTileCount > takenTileCount;
+}

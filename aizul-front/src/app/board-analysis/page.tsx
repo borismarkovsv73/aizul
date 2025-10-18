@@ -8,12 +8,51 @@ import { elektra } from "../layout";
 export default function BoardDemo() {
   const [resetKey, setResetKey] = useState(0);
   const [lastMoveResult, setLastMoveResult] = useState<any>(null);
+  const [highlightedFactory, setHighlightedFactory] = useState<number | null>(null);
+  const [highlightedRow, setHighlightedRow] = useState<number | null>(null);
+  const [currentPlayerId, setCurrentPlayerId] = useState<number | null>(null);
 
   const clearBoardState = () => {
     console.log("Clearing board state...");
     setResetKey(prev => prev + 1);
     setLastMoveResult(null);
+    setHighlightedFactory(null);
+    setHighlightedRow(null);
+    setCurrentPlayerId(null);
     console.log("Board state cleared!");
+  };
+
+  const parseMoveForHighlights = (moveResult: any) => {
+    if (!moveResult || !moveResult.description) return;
+    
+    // Parse description like "Take 1 blue tiles from factory 5 and place on row 4"
+    // or "Take 2 red tiles from the center and place on the floor"
+    const description = moveResult.description;
+    
+    // Extract factory number or center
+    let factory = null;
+    const factoryMatch = description.match(/from factory (-?\d+)/);
+    if (factoryMatch) {
+      factory = parseInt(factoryMatch[1]);
+    } else if (description.includes("from the center")) {
+      factory = -1;
+    }
+    
+    // Extract row number or floor
+    let row = null;
+    const rowMatch = description.match(/place on row (-?\d+)/);
+    if (rowMatch) {
+      // Convert from 1-indexed (backend) to 0-indexed (frontend)
+      row = parseInt(rowMatch[1]) - 1;
+    } else if (description.includes("place on the floor")) {
+      row = -1;
+    }
+    
+    console.log("Parsed highlights - Factory:", factory, "Row:", row);
+    console.log("Original description:", description);
+    
+    setHighlightedFactory(factory);
+    setHighlightedRow(row);
   };
 
   const collectGameStateFromDOM = () => {
@@ -199,6 +238,22 @@ export default function BoardDemo() {
       const gameState = collectGameStateFromDOM();
       console.log("Game state collected:", gameState);
       
+      // Check if the board is completely empty
+      const hasAnyTiles = gameState.factories.some((factory: any) => factory.tiles.length > 0) ||
+                         gameState.players.some((player: any) => 
+                           player.board.rows.some((row: any[]) => row.some((tile: any) => tile !== null)) ||
+                           player.board.wall.some((row: any[]) => row.some((tile: any) => tile !== null)) ||
+                           player.board.floor.some((tile: any) => tile !== null)
+                         );
+      
+      if (!hasAnyTiles) {
+        alert("Please set up the board with some tiles before asking for AI recommendations!");
+        return;
+      }
+      
+      console.log("Current player (id=1) is always the bottom player");
+      setCurrentPlayerId(2);
+      
       console.log("Sending to backend:", gameState);
       
       const backendUrls = [
@@ -223,6 +278,7 @@ export default function BoardDemo() {
             const moveResult = await response.json();
             console.log("Received move from backend:", moveResult);
             setLastMoveResult(moveResult);
+            parseMoveForHighlights(moveResult);
             return;
           } else {
             console.error(`Backend error for ${url}:`, response.status, response.statusText);
@@ -246,28 +302,28 @@ export default function BoardDemo() {
 
   return (
     <div className="flex flex-col items-center p-8 gap-8">
-      <Player key={`player1-${resetKey}`} />
-      <div className="flex flex-row items-center py-8 px-20 bg-layout-bg-dark rounded-2xl shadow-lg">
+      <Player key={`player1-${resetKey}`} highlightedRow={currentPlayerId === 1 ? highlightedRow : null} />
+      <div className="flex flex-row items-center py-8 px-20 rounded-2xl bg-gray-100">
         <div className="grid grid-cols-3 gap-6 place-items-center mr-40">
-          <Factory key={`factory1-${resetKey}`} />
-          <Factory key={`factory2-${resetKey}`} />
-          <Factory key={`factory3-${resetKey}`} />
-          <Factory key={`factory4-${resetKey}`} />
-          <Factory key={`factory5-${resetKey}`} />
+          <Factory key={`factory1-${resetKey}`} factoryId={1} isHighlighted={highlightedFactory === 1} />
+          <Factory key={`factory2-${resetKey}`} factoryId={2} isHighlighted={highlightedFactory === 2} />
+          <Factory key={`factory3-${resetKey}`} factoryId={3} isHighlighted={highlightedFactory === 3} />
+          <Factory key={`factory4-${resetKey}`} factoryId={4} isHighlighted={highlightedFactory === 4} />
+          <Factory key={`factory5-${resetKey}`} factoryId={5} isHighlighted={highlightedFactory === 5} />
           <div />
           <div />
           <div />
           <div />
         </div>
-        <CenterFactory key={`center-${resetKey}`} />
+        <CenterFactory key={`center-${resetKey}`} isHighlighted={highlightedFactory === -1} />
       </div>
-      <Player key={`player2-${resetKey}`} />
+      <Player key={`player2-${resetKey}`} highlightedRow={currentPlayerId === 2 ? highlightedRow : null} />
       
       {/* Control buttons */}
       <div className="flex gap-4 mt-8">
         <button
           onClick={clearBoardState}
-          className="w-40 px-6 py-3 bg-layout-light-accent hover:bg-layout-light-accent-hover text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+          className="w-40 px-6 py-3 bg-blue-accent hover:bg-blue-bold text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
         >
           Clear
         </button>
@@ -281,11 +337,16 @@ export default function BoardDemo() {
       
 
       {lastMoveResult && (
-        <div className="fixed bottom-4 left-4 w-150 p-6 bg-white/70 backdrop-blur-sm rounded-xl shadow-xl z-50">
+        <div className="fixed bottom-4 left-4 w-150 p-6 bg-white/65 backdrop-blur-sm rounded-xl shadow-xl z-50">
           <div className="flex justify-between items-start mb-4">
-            <h3 className={`${elektra.className} font-bold text-2xl text-layout-text`}>Azulie's Recommendation:</h3>
+            <h3 className={`${elektra.className} font-bold text-2xl text-layout-text`} style={{ letterSpacing: '0.05em' }}>Azulie's Recommendation:</h3>
             <button 
-              onClick={() => setLastMoveResult(null)}
+              onClick={() => {
+                setLastMoveResult(null);
+                setHighlightedFactory(null);
+                setHighlightedRow(null);
+                setCurrentPlayerId(null);
+              }}
               className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none"
             >
               ×

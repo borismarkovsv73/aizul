@@ -79,6 +79,9 @@ public class Move {
             amount = takenTiles.size() - 1;
         }
         
-        return "Take " + amount + " " + takenTiles.get(0).toString() + " tiles from factory " + factoryId + " and place in row " + targetRow;
+        String factoryDescription = (factoryId == -1) ? "the center" : ("factory " + factoryId);
+        String rowDescription = (targetRow == -1) ? "the floor" : ("row " + (targetRow+1));
+        
+        return "Take " + amount + " " + takenTiles.get(0).toString() + " tiles from " + factoryDescription + " and place on " + rowDescription + ".";
     }
 }

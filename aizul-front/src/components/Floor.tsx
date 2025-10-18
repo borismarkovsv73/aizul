@@ -13,7 +13,11 @@ type ColorName =
   | "lime"
   | "empty";
 
-const Floor = () => {
+interface FloorProps {
+  isHighlighted?: boolean;
+}
+
+const Floor: React.FC<FloorProps> = ({ isHighlighted = false }) => {
   const [blockColors, setBlockColors] = useState<ColorName[]>(
     Array.from({ length: BLOCKS }, () => "empty" as ColorName),
   );
@@ -54,7 +58,9 @@ const Floor = () => {
   };
 
   return (
-    <div className="flex flex-col justify-between p-4 bg-gray-100 rounded-lg h-[450px]" data-component="floor">
+    <div className={`flex flex-col justify-between p-4 bg-gray-100 rounded-lg h-[450px] transition-shadow duration-300 ${
+      isHighlighted ? 'shadow-green-400 shadow-2xl ring-6 ring-green-300/50' : ''
+    }`} data-component="floor">
       {Array.from({ length: BLOCKS }).map((_, idx) => (
         <div key={idx} className="flex flex-row items-center gap-4" data-floor-slot={idx}>
           <div

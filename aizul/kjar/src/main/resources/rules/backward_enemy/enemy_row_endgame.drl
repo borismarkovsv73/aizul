@@ -18,9 +18,9 @@ rule "Avoid Blocking Enemy Row When Behind"
     when
         $move : Move()
         $board : Board()
-        $player : Player($playerId : id, board == $board, $playerScore : score)
-        $enemyPlayer : Player(id != $playerId, $enemyBoard : board, $enemyScore : score, $enemyScore < $playerScore)
-        recursiveEnemyRowTileChain( $move, $enemyBoard, 2; )
+        $player : Player(id == 1, board == $board, $playerScore : score)
+        $enemyPlayer : Player(id != 1, $enemyBoard : board, $enemyScore : score, $enemyScore + 10 < $playerScore)
+        recursiveEnemyRowTileChain( $move, $enemyBoard, 3; )
         not String(this == "ENEMY_ENDGAME_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId())
     then
         String processed = "ENEMY_ENDGAME_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId();
@@ -28,22 +28,21 @@ rule "Avoid Blocking Enemy Row When Behind"
 
         int penaltyPoints = 0;
         int tilesOnRow = 0;
+        String message = "";
         Tile[][] enemyWall = $enemyBoard.getWall();
 
         if (canEnemyCompleteRowWithMove(enemyWall, $move, 4)) {
-            penaltyPoints = 20;
-            tilesOnRow = 4;
-        } else if (canEnemyCompleteRowWithMove(enemyWall, $move, 3)) {
             penaltyPoints = 5;
-            tilesOnRow = 3;
-        } else if (canEnemyCompleteRowWithMove(enemyWall, $move, 2)) {
+            tilesOnRow = 4;
+            message = "Enemy could end the game with this move, but you are winning so maybe some other move is better.";
+        } else if (canEnemyCompleteRowWithMove(enemyWall, $move, 3)) {
             penaltyPoints = 4;
-            tilesOnRow = 2;
+            tilesOnRow = 3;
+            message = "Enemy is getting closer to ending the game with this move, but you are winning so maybe some other move is better.";
         }
 
         int newScore = $move.getScore() - penaltyPoints;
         $move.setScore(newScore);
-        String message = "This move will make an enemy closer to the end, but I have more points so I don't take it!";
         $move.addAppliedRule(false, message);
 end
 

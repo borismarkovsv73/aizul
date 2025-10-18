@@ -12,7 +12,11 @@ type ColorName =
 
 const colors: ColorName[] = ["red", "blue", "yellow", "black", "white", "lime"];
 
-const CenterFactory = () => {
+interface CenterFactoryProps {
+  isHighlighted?: boolean;
+}
+
+const CenterFactory: React.FC<CenterFactoryProps> = ({ isHighlighted = false }) => {
   const [counts, setCounts] = useState<Record<ColorName, number>>({
     red: 0,
     blue: 0,
@@ -35,7 +39,9 @@ const CenterFactory = () => {
   };
 
   return (
-    <div className="flex flex-row gap-4 p-4 bg-gray-100 rounded-lg">
+    <div className={`flex flex-row gap-4 p-4 bg-gray-100 shadow-lg rounded-lg transition-shadow duration-300 ${
+      isHighlighted ? 'shadow-green-400 shadow-2xl ring-6 ring-green-300/50' : ''
+    }`}>
       {/* Color blocks column */}
       <div className="flex flex-col gap-2">
         {colors.map((color) => (

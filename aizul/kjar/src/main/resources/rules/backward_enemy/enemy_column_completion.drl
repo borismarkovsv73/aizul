@@ -26,11 +26,6 @@ rule "Block Enemy Column Progress"
         String processed = "ENEMY_COLUMN_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId();
         insert(processed);
 
-        System.out.println("=== ENEMY COLUMN BLOCKING RULE FIRED ===");
-        System.out.println("Player ID: " + $player.getId() + " Score: " + $playerScore);
-        System.out.println("Enemy ID: " + $enemyPlayer.getId() + " Score: " + $enemyScore);
-        System.out.println("Move: " + $move.toString());
-
         int bonusPoints = 0;
         int tilesOnColumn = 0;
         Tile[][] enemyWall = $enemyBoard.getWall();
@@ -48,9 +43,7 @@ rule "Block Enemy Column Progress"
 
         int newScore = $move.getScore() + bonusPoints;
         $move.setScore(newScore);
-        System.out.println($move.toString());
-        System.out.println("This move blocks enemy from completing a column! Points bonus:");
-        System.out.println(bonusPoints);
+
         String message = "This move blocks enemy from completing a column!";
         $move.addAppliedRule(true, message);
 end

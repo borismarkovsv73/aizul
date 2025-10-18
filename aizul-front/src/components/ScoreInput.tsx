@@ -1,3 +1,4 @@
+import { elektra } from "@/app/layout";
 import React, { useState } from "react";
 
 interface ScoreInputProps {
@@ -19,7 +20,7 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
 
   return (
     <div className="flex flex-row items-center gap-3 p-4 bg-gray-100 rounded-lg" data-component="score-input">
-      <label className="text-base font-bold text-gray-700 select-none">Score:</label>
+      <label className={`${elektra.className} text-xl font-bold text-gray-700 select-none`}>Score:</label>
       <input
         type="number"
         value={score}
