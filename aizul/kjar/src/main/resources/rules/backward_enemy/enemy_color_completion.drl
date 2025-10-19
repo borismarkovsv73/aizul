@@ -31,13 +31,13 @@ rule "Block Enemy Color Progress"
         Tile[][] enemyWall = $enemyBoard.getWall();
 
         if (canEnemyCompleteColorWithMove(enemyWall, $move, 4)) {
-            bonusPoints = 20;
+            bonusPoints = 15;
             tilesOfColor = 4;
         } else if (canEnemyCompleteColorWithMove(enemyWall, $move, 3)) {
-            bonusPoints = 15;
+            bonusPoints = 10;
             tilesOfColor = 3;
         } else if (canEnemyCompleteColorWithMove(enemyWall, $move, 2)) {
-            bonusPoints = 10;
+            bonusPoints = 5;
             tilesOfColor = 2;
         }
 

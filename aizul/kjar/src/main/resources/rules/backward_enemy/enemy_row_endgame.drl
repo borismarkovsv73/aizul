@@ -32,7 +32,7 @@ rule "Avoid Blocking Enemy Row When Behind"
         Tile[][] enemyWall = $enemyBoard.getWall();
 
         if (canEnemyCompleteRowWithMove(enemyWall, $move, 4)) {
-            penaltyPoints = 10;
+            penaltyPoints = 20;
             tilesOnRow = 4;
             message = "Enemy could complete a row and end the game with this move. Since you're winning, letting them end the game now secures your victory.";
         } else if (canEnemyCompleteRowWithMove(enemyWall, $move, 3)) {
