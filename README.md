@@ -69,6 +69,35 @@ Forward chain pravila koja smo implementirali su sledeća:
 - **Pravilo 4:** Da li uzimamo token prvog igrača - **+2 bodova**
 - **Pravilo 5:** Da li potezom imamo pločice koje se prelivaju u pod - **-10 bodova**
 
+#### Template Layer
+
+Template layer predstavlja dinamičko kreiranje pravila u realnom vremenu na osnovu trenutnog stanja igre. Koristi Drools template (.drt) fajlove koji se kompajliraju u izvršna pravila tokom runtime-a.
+
+Implementirali smo dva tipa template pravila:
+
+##### Prioritet redova
+**Template fajl**: `row_priority.drt`
+**Svrha**: Dodeljivanje progresivnih bodova na osnovu reda na koji se pločice postavljaju
+
+**Implementacija**: Za svaki red (0-4) se generiše zasebno pravilo koje dodeljuje bodove:
+- **Red 1:** +1 bod
+- **Red 2:** +2 boda  
+- **Red 3:** +3 boda
+- **Red 4:** +4 boda
+- **Red 5:** +5 bodova
+
+##### Završavanje redova
+**Template fajl**: `row_completion.drt`
+**Svrha**: Bonus bodovi kada potez dovršava red na tabli
+
+**Implementacija**: Za svaki red se generiše pravilo koje proverava da li potez dovršava red i dodeljuje bonus bodove na osnovu veličine reda:
+- **Red 1:** +7 bodova (5 + 1*2)
+- **Red 2:** +9 bodova (5 + 2*2)
+- **Red 3:** +11 bodova (5 + 3*2)
+- **Red 4:** +13 bodova (5 + 4*2)
+- **Red 5:** +15 bodova (5 + 5*2)
+
+
 #### Backwards chaining
 
 Dugoročni ciljevi variraju u zavisnosti od toga koliko rundi se već odigralo, koja je veština protivnika, subjektivnog mišljenja igrača koja je najbolja strategija za pobeđivanje u igri i samog toka igre. Sa time u vidu, implementirali smo dve kategorije backward chain ciljeva: za **Našu tablu** i **Protivničku tablu**
@@ -273,15 +302,12 @@ mindmap
 	- Šema za pločice
 	- Red poda
 - Stanje fabrika i centra stola
-- Log svih poteza odigranih u rundi
-- Broj igrača
 #### Izlaz programa
 - Predlog poteza
 - Rezonovanje izbora
 #### Baza znanja
 - Pravila igre
 - Heuristike za donošenje odluka
-- Šabloni tipičnih situacija i primećena ponašanja igrača
 
 - - -
 ### Rezonovanje konkretnog primera
@@ -307,7 +333,19 @@ mindmap
    - **Potez 4**: Uzmi 1 žutu pločicu iz centra → neki red
    - **Potez 5**: Uzmi 1 crnu pločicu iz centra → neki red
 
-3. **Forward Chaining - evaluacija kroz 5 pravila**:
+3. **Template Layer - dinamička pravila**:
+
+   **Prioritet redova (row_priority.drt):**
+   - **Potez 1 (red 3)**: +3 boda (red 3 je viši, više vredi)
+   - **Potez 2 (red poda)**: +0 bodova (pod ne nosi bonus)
+   - **Potez 3 (neki red, npr. red 2)**: +2 boda
+   - **Potez 4 i 5**: Zavisi od ciljnog reda
+   
+   **Završavanje redova (row_completion.drt):**
+   - **Potez 1 (red 3)**: Red 3 već ima 2 pločice, ovim se završava → +11 bodova (5 + 3*2)
+   - **Ostali potezi**: Ne završavaju redove → +0 bodova
+
+4. **Forward Chaining - evaluacija kroz 5 pravila**:
 
    **Potez 1 (3 plave → red 3):**
    - ✅ Pravilo 2: Nastavljamo red koji smo krenuli → **+3 poena**
@@ -328,7 +366,7 @@ mindmap
    - Nema posebnih bonusa → **0 poena**
    - **Međuscore: 0 poena**
 
-4. **Backward Chaining - dugoročni ciljevi (rekurzivni upiti)**
+5. **Backward Chaining - dugoročni ciljevi (rekurzivni upiti)**
 
    **Za naš cilj - završavanje boja:**
    - Rekurzivni upit proverava dubine 1-4 za završavanje boje
@@ -357,15 +395,30 @@ mindmap
      - Query detektuje da za 1 rundu može završiti red
      - Blokiranje daje → **+15 poena**
 
-6. **Najbolji potez: Potez 3 - Uzmi 2 crvene pločice iz fabrike A**
+6. **Konačni rezultat - suma svih slojeva**:
+
+   **Potez 1 (3 plave → red 3):**
+   - Template Layer: +3 (prioritet reda) + 11 (završavanje reda) = **+14 poena**
+   - Forward Chaining: -5 poena
+   - Backward Chaining: +20 (boja) + 10 (red) = **+30 poena**
+   - **Ukupno: 39 poena**
+
+   **Potez 3 (2 crvene → neki red):**
+   - Template Layer: +2 (prioritet reda) + 0 (bez završavanja) = **+2 poena**
+   - Forward Chaining: +8 poena
+   - Backward Chaining: +10 (blokiranje boje) + 15 (blokiranje reda) = **+25 poena**
+   - **Ukupno: 35 poena**
+
+7. **Najbolji potez: Potez 1 - Uzmi 3 plave pločice iz fabrike B → red 3**
 
    **Output sistema:**
-   > "Uzmi 2 crvene pločice iz fabrike A i postavi ih u red 2.
+   > "Uzmi 3 plave pločice iz fabrike B i postavi ih u red 3.
    >
    > **Razlog:**
-   > - Blokiraš protivnika da završi red 4 (forward chaining)
-   > - Sprečavaš protivnika da završi kompletnu crvenu boju koja mu donosi +10 bonus poena na kraju igre (backward chaining)
-   > - Sprečavaš protivnika da završi red što bi završilo igru dok imaš samo 3 poena prednosti (backward chaining)
+   > - Završavaš red 3 koji već ima 2 pločice i dobijaš bonus bodove (template layer)
+   > - Nastavljaš rad na redu koji si već krenuo (forward chaining)
+   > - Postaviš 4. plavu pločicu na zid, blizu si kompletiranja plave boje za +10 bonus poena (backward chaining)
+   > - Završavaš red što može završiti igru, a imaš 3 poena prednosti nad protivnikom (backward chaining)
    >
 
 ---
