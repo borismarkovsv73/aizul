@@ -1,0 +1,20 @@
+template header
+rowNumber
+points
+ruleName
+
+package rules.templates
+import com.ftn.sbnz.model.models.Move;
+
+template "Row Priority Template"
+
+rule "Row Priority - @{ruleName}"
+    when
+        $m : Move(targetRow == @{rowNumber})
+    then
+        $m.setScore($m.getScore() + @{points});
+        String message = "You place tiles on row @{points}, and higher rows are more valuable.";
+        $m.addAppliedRule(true, message);
+end
+
+end template

@@ -9,21 +9,15 @@ import java.util.ArrayList;
 
 public class BoardUtils {
     
-    /**
-     * Applies a move to the board. Lime tokens automatically go to the floor,
-     * regular tiles go to the target row or floor if overflow.
-     */
     public static void applyMoveToBoard(Board board, Move move) {
         List<Tile> takenTiles = move.getTakenTiles();
         int targetRow = move.getTargetRow();
-
         if (targetRow == -1) {
-            // All tiles go to floor
+
             placeTilesOnFloor(board, takenTiles);
             return;
         }
         
-        // Separate lime tokens (they always go to floor) from regular tiles
         List<Tile> regularTiles = new ArrayList<>();
         List<Tile> limeTokens = new ArrayList<>();
         
@@ -35,12 +29,10 @@ public class BoardUtils {
             }
         }
         
-        // Place lime tokens directly on floor
         if (!limeTokens.isEmpty()) {
             placeTilesOnFloor(board, limeTokens);
         }
         
-        // Handle regular tiles placement on the target row
         List<Tile> row = board.getRows().get(targetRow);
         int maxRowCapacity = targetRow + 1;
         int currentTilesInRow = (int) row.stream().filter(tile -> tile != null).count();
@@ -56,7 +48,6 @@ public class BoardUtils {
             }
         }
 
-        // Place overflow regular tiles on floor
         if (tilesPlacedOnRow < regularTiles.size()) {
             List<Tile> overflowTiles = regularTiles.subList(tilesPlacedOnRow, regularTiles.size());
             placeTilesOnFloor(board, overflowTiles);
@@ -115,8 +106,9 @@ public class BoardUtils {
 
     public static boolean completedRowContainsMoveTile(Board board, Move move) {
         if (board == null || move == null) return false;
-
-        for (List<Tile> row : board.getRows()) {
+  
+        for (int i = 0; i < board.getRows().size(); i++) {
+            List<Tile> row = board.getRows().get(i); 
             if (!row.isEmpty() && row.stream().allMatch(tile -> tile != null)) {
                 boolean containsFromMove = row.stream().anyMatch(
                         rowTile -> move.getTakenTiles().stream()

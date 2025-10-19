@@ -8,4 +8,7 @@
   <kbase name="combinedBackwardBaseEnemy" packages="rules.backward_enemy">
     <ksession name="combinedBackwardSessionEnemy"/>
   </kbase>
+  <kbase name="templateBase" packages="rules.templates">
+    <ksession name="templateSession"/>
+  </kbase>
 </kmodule>

@@ -17,6 +17,7 @@ import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.dto.MoveDTO;
+import com.ftn.sbnz.service.templates.RowPriorityTemplateProcessor;
 import java.util.Map;
 
 
@@ -31,7 +32,10 @@ public class SampleAppService {
 	public SampleAppService(KieContainer kieContainer) {
 		log.info("Initialising a new example session.");
 		this.kieContainer = kieContainer;
+		log.info("Template rules will be generated dynamically at runtime for each request.");
 	}
+
+
 
 	public List<Move> forwardChain() throws Exception{
 		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("backward_chain_combined_test.json");
@@ -147,7 +151,42 @@ public class SampleAppService {
 			move.setScore(0);
 		}
 
-		// 1. Apply forward chaining for tactical analysis
+		// 1. Apply template rules for basic row prioritization
+		int templateRulesFired = 0;
+		try {
+			log.info("Attempting to create dynamic template session...");
+			
+			// Generate rules and create a dynamic KieSession
+			RowPriorityTemplateProcessor processor = new RowPriorityTemplateProcessor();
+			KieSession templateSession = processor.createDynamicTemplateSession();
+			
+			if (templateSession != null) {
+				log.info("Dynamic template session created successfully");
+				
+				log.info("Inserting " + possibleMoves.size() + " moves into template session");
+				for (Move move : possibleMoves) {
+					// Create board state after move for template evaluation
+					Board originalBoard = currentPlayer.getBoard();
+					Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
+					BoardUtils.applyMoveToBoard(boardAfterMove, move);
+					
+					templateSession.insert(move);
+					templateSession.insert(boardAfterMove);
+				}
+				
+				templateRulesFired = templateSession.fireAllRules();
+				templateSession.dispose();
+				
+				log.info("Template rules fired: " + templateRulesFired);
+			} else {
+				log.warn("Could not create dynamic template session");
+			}
+		} catch (Exception e) {
+			log.warn("Template session not available, skipping template rules: " + e.getMessage());
+			e.printStackTrace();
+		}
+
+		// 2. Apply forward chaining for tactical analysis
 		int forwardRulesFired = 0;
 		for (Move move : possibleMoves) {
 			KieSession forwardSession = kieContainer.newKieSession("forwardSession");
@@ -172,7 +211,7 @@ public class SampleAppService {
 			forwardSession.dispose();
 		}
 
-		// 2. Apply backward chaining for strategic analysis
+		// 3. Apply backward chaining for strategic analysis
 		KieSession backwardSession = kieContainer.newKieSession("combinedBackwardSession");
 		Board currentBoard = currentPlayer.getBoard();
 		backwardSession.insert(currentBoard);
@@ -186,7 +225,7 @@ public class SampleAppService {
 		int backwardRules = backwardSession.fireAllRules();
 		backwardSession.dispose();
 
-		// 3. Apply enemy backward chaining
+		// 4. Apply enemy backward chaining
 		KieSession enemySession = kieContainer.newKieSession("combinedBackwardSessionEnemy");
 
 		enemySession.insert(currentBoard);
@@ -221,7 +260,7 @@ public class SampleAppService {
 		// Sort and return best move
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
 
-		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules, " + enemyRules + " enemy rules");
+		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + templateRulesFired + " template rules, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules, " + enemyRules + " enemy rules");
 
 		if (!possibleMoves.isEmpty()) {
 			Move bestMove = possibleMoves.get(0);

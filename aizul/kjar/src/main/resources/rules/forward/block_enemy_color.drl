@@ -8,17 +8,65 @@ import com.ftn.sbnz.model.models.GameState;
 
 rule "Block Enemy Color"
     when
-        $m : Move($targetRow : targetRow)
-        $b : Board($rows : rows)
-        $player : Player(board == $b)
+        $m : Move($targetRow : targetRow, $takenTiles : takenTiles)
+        $b : Board()
+        $player : Player(id == 1)
         $gameState : GameState($players : players)
-        $enemy : Player(id != $player.getId(), $enemyBoard : board) from $players
-        eval($targetRow >= 0)
-        $tile : Tile($color : color) from $rows.get($targetRow)
-        $enemyRows : java.util.List() from $enemyBoard.getRows()
-        exists( Tile(color == $color) from $enemyRows )
+        $enemy : Player(id != 1, $enemyBoard : board) from $players
+        eval($targetRow >= 0 && $takenTiles != null && !$takenTiles.isEmpty())
+        eval(checkIfBlockingEnemyColor($m, $enemyBoard))
     then
         $m.setScore($m.getScore() + 8);
         String message = "Blocking enemy's needed color!";
         $m.addAppliedRule(true, message);
 end
+
+function boolean checkIfBlockingEnemyColor(Move move, Board enemyBoard) {
+    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) {
+        return false;
+    }
+    
+    // Get the color of tiles we're taking
+    String moveColor = null;
+    java.util.List takenTiles = move.getTakenTiles();
+    for (int i = 0; i < takenTiles.size(); i++) {
+        Tile tile = (Tile) takenTiles.get(i);
+        if (tile != null && !"lime".equals(tile.getColor())) {
+            moveColor = tile.getColor();
+            break;
+        }
+    }
+    
+    if (moveColor == null) {
+        return false;
+    }
+    
+    // Check if enemy has incomplete rows that need this color
+    java.util.List enemyRows = enemyBoard.getRows();
+    
+    for (int i = 0; i < enemyRows.size(); i++) {
+        java.util.List enemyRow = (java.util.List) enemyRows.get(i);
+        int maxCapacity = i + 1; // Row 0 = 1, Row 1 = 2, etc.
+        
+        // Count non-null tiles in this enemy row
+        int currentTiles = 0;
+        String rowColor = null;
+        for (int j = 0; j < enemyRow.size(); j++) {
+            Object tileObj = enemyRow.get(j);
+            if (tileObj != null) {
+                currentTiles++;
+                if (rowColor == null) {
+                    Tile tile = (Tile) tileObj;
+                    rowColor = tile.getColor();
+                }
+            }
+        }
+        
+        // If enemy row is incomplete and has the same color we're taking
+        if (currentTiles > 0 && currentTiles < maxCapacity && moveColor.equals(rowColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}

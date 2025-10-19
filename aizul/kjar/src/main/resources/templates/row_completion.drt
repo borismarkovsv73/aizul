@@ -1,0 +1,26 @@
+template header
+rowIndex
+rowSize
+baseScore
+bonusScore
+ruleName
+
+package rules.templates
+import com.ftn.sbnz.model.models.Move;
+import com.ftn.sbnz.model.models.Board;
+import com.ftn.sbnz.model.utils.BoardUtils;
+
+template "Row Completion Template"
+
+rule "Row Completion - @{ruleName}"
+    when
+        $m : Move(targetRow == @{rowIndex})
+        $b : Board()
+        eval(BoardUtils.completedRowContainsMoveTile($b, $m))
+    then
+        $m.setScore($m.getScore() + @{bonusScore});
+        String message = "You can complete row @{rowSize} with this move.";
+        $m.addAppliedRule(true, message);
+end
+
+end template
