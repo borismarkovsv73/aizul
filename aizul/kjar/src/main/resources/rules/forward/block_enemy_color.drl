@@ -2,71 +2,18 @@ package rules.forward
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
-import com.ftn.sbnz.model.models.Tile;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.utils.BoardUtils;
 
-rule "Block Enemy Color"
+rule "Block enemy pattern-line completion"
     when
-        $m : Move($targetRow : targetRow, $takenTiles : takenTiles)
-        $b : Board()
-        $player : Player(id == 1)
+        $m : Move()
         $gameState : GameState($players : players)
-        $enemy : Player(id != 1, $enemyBoard : board) from $players
-        eval($targetRow >= 0 && $takenTiles != null && !$takenTiles.isEmpty())
-        eval(checkIfBlockingEnemyColor($m, $enemyBoard))
+        $enemy : Player($enemyBoard : board) from $players
+        eval($enemy != $players.get(0))
+        eval(BoardUtils.canBlockEnemyPatternLineCompletion($enemyBoard, $m))
     then
         $m.setScore($m.getScore() + 8);
-        String message = "Blocking enemy's needed color!";
-        $m.addAppliedRule(true, message);
+        $m.addAppliedRule(true, "You take enough of a color to deny an enemy's started pattern line.");
 end
-
-function boolean checkIfBlockingEnemyColor(Move move, Board enemyBoard) {
-    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) {
-        return false;
-    }
-    
-    // Get the color of tiles we're taking
-    String moveColor = null;
-    java.util.List takenTiles = move.getTakenTiles();
-    for (int i = 0; i < takenTiles.size(); i++) {
-        Tile tile = (Tile) takenTiles.get(i);
-        if (tile != null && !"lime".equals(tile.getColor())) {
-            moveColor = tile.getColor();
-            break;
-        }
-    }
-    
-    if (moveColor == null) {
-        return false;
-    }
-    
-    // Check if enemy has incomplete rows that need this color
-    java.util.List enemyRows = enemyBoard.getRows();
-    
-    for (int i = 0; i < enemyRows.size(); i++) {
-        java.util.List enemyRow = (java.util.List) enemyRows.get(i);
-        int maxCapacity = i + 1; // Row 0 = 1, Row 1 = 2, etc.
-        
-        // Count non-null tiles in this enemy row
-        int currentTiles = 0;
-        String rowColor = null;
-        for (int j = 0; j < enemyRow.size(); j++) {
-            Object tileObj = enemyRow.get(j);
-            if (tileObj != null) {
-                currentTiles++;
-                if (rowColor == null) {
-                    Tile tile = (Tile) tileObj;
-                    rowColor = tile.getColor();
-                }
-            }
-        }
-        
-        // If enemy row is incomplete and has the same color we're taking
-        if (currentTiles > 0 && currentTiles < maxCapacity && moveColor.equals(rowColor)) {
-            return true;
-        }
-    }
-    
-    return false;
-}

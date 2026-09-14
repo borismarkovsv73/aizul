@@ -16,10 +16,10 @@ rule "Row Completion - @{ruleName}"
     when
         $m : Move(targetRow == @{rowIndex})
         $b : Board()
-        eval(BoardUtils.completedRowContainsMoveTile($b, $m))
+        eval(BoardUtils.completesTargetPatternLine($b, $m))
     then
         $m.setScore($m.getScore() + @{bonusScore});
-        String message = "You can complete row @{rowSize} with this move.";
+        String message = "You complete pattern line @{rowSize} with this move.";
         $m.addAppliedRule(true, message);
 end
 

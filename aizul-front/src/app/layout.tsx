@@ -1,17 +1,14 @@
 "use client";
 
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import localFont from "next/font/local";
 import Image from "next/image";
-import { GiGreekTemple } from "react-icons/gi";
-import { BsFillGrid3X3GapFill } from "react-icons/bs";
-import { MdOutlineScience } from "react-icons/md";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FaGithub } from "react-icons/fa";
+import { GiGreekTemple } from "react-icons/gi";
+import { MdOutlineScience } from "react-icons/md";
+import { elektra } from "./fonts";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,17 +18,6 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-export const elektra = localFont({
-  src: [
-    {
-      path: "../../public/fonts/elektra.ttf",
-      weight: "variable",
-      style: "normal",
-    },
-  ],
-  variable: "--font-elektra",
 });
 
 export default function RootLayout({
@@ -54,7 +40,9 @@ export default function RootLayout({
         <title>AIZUL - Azul Agent</title>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${elektra.variable} antialiased flex`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${elektra.variable} antialiased flex`}
+      >
         <nav
           className={`${elektra.className} fixed top-0 left-0 flex flex-col items-start p-6 bg-layout-bg shadow-lg rounded-tr-xl rounded-br-xl w-64 min-h-screen h-screen text-layout-text`}
         >
@@ -66,7 +54,10 @@ export default function RootLayout({
               height={150}
             />
           </div>
-          <div className="mb-8 mt-1 text-3xl font-bold flex justify-center w-full" style={{ letterSpacing: '0.05em' }}>
+          <div
+            className="mb-8 mt-1 text-3xl font-bold flex justify-center w-full"
+            style={{ letterSpacing: "0.05em" }}
+          >
             Aizul
           </div>
           <Link
@@ -76,7 +67,7 @@ export default function RootLayout({
               flex items-center
               ${isActive("/") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
-            style={{ letterSpacing: '0.05em' }}
+            style={{ letterSpacing: "0.05em" }}
           >
             <GiGreekTemple className="mr-3" /> Welcome
           </Link>
@@ -87,7 +78,7 @@ export default function RootLayout({
               flex items-center
               ${isActive("/board-analysis") ? "bg-layout-light-accent-hover hover:bg-layout-light-accent text-layout-bg hover:text-layout-text" : " hover:bg-layout-light-accent"}
             `}
-            style={{ letterSpacing: '0.05em' }}
+            style={{ letterSpacing: "0.05em" }}
           >
             <MdOutlineScience className="mr-3" /> Board Analysis
           </Link>
@@ -96,7 +87,7 @@ export default function RootLayout({
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium transition-colors duration-200 px-4 py-3 rounded-lg w-full text-left mb-2 flex items-center hover:bg-layout-light-accent"
-            style={{ letterSpacing: '0.1em' }}
+            style={{ letterSpacing: "0.1em" }}
           >
             <FaGithub className="mr-3" /> GitHub
           </Link>

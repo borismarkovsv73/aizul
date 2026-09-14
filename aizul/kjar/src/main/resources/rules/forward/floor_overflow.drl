@@ -2,17 +2,18 @@ package rules.forward
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
-import com.ftn.sbnz.model.models.Tile;
+import com.ftn.sbnz.model.models.Player;
+import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.utils.BoardUtils;
 
 rule "Floor overflow"
     when
-        $m : Move($takenTiles : takenTiles)
-        $b : Board($floor : floor)
-        exists( Tile( $fId : id ) from $floor and
-                Tile( $tId : id ) from $takenTiles and
-                eval($fId != null && $tId != null && $fId.equals($tId)) )
+        $m : Move()
+        $gameState : GameState($players : players)
+        $currentPlayer : Player($board : board) from $players
+        eval($currentPlayer == $players.get(0))
+        eval(BoardUtils.countNewFloorTiles($board, $m) > 0)
     then
         $m.setScore($m.getScore() - 10);
-        String message = "You let one or more tiles fall to the floor with this move.";
-        $m.addAppliedRule(false, message);
+        $m.addAppliedRule(false, "One or more tiles from this move go to the floor line.");
 end

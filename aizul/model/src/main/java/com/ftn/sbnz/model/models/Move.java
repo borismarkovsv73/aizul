@@ -66,6 +66,11 @@ public class Move {
         if (this.appliedRules == null) {
             this.appliedRules = new ArrayList<Map<Boolean, String>>();
         }
+        for (Map<Boolean, String> appliedRule : this.appliedRules) {
+            if (ruleName != null && ruleName.equals(appliedRule.get(isPositive))) {
+                return;
+            }
+        }
         Map<Boolean, String> ruleEntry = new HashMap<>();
         ruleEntry.put(isPositive, ruleName);
         this.appliedRules.add(ruleEntry);

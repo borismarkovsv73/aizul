@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.rule.FactHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +12,12 @@ import org.springframework.stereotype.Service;
 
 import com.ftn.sbnz.model.utils.JsonLoader;
 import com.ftn.sbnz.model.utils.MoveGenerator;
-import com.ftn.sbnz.model.utils.BoardUtils;
 import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.GameState;
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.dto.MoveDTO;
 import com.ftn.sbnz.service.templates.RowPriorityTemplateProcessor;
-import java.util.Map;
 
 
 @Service
@@ -45,15 +44,8 @@ public class SampleAppService {
 
 		for (Move move : possibleMoves) {
 			KieSession kieSession = kieContainer.newKieSession("forwardSession");
-
-			Board originalBoard = currentPlayer.getBoard();
-			Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
-			BoardUtils.applyMoveToBoard(boardAfterMove, move);
-
 			kieSession.insert(move);
-			kieSession.insert(boardAfterMove);
 			kieSession.insert(mockGameState);
-			kieSession.insert(currentPlayer);
 
 			kieSession.fireAllRules();
 			kieSession.dispose();
@@ -73,10 +65,6 @@ public class SampleAppService {
 	public List<Move> unifiedBackwardChainTest() throws Exception {
 		GameState mockGameState = JsonLoader.loadGameStateFromClasspath("enemy_endgame_test.json");
 		Player currentPlayer = mockGameState.getPlayers().get(0);
-		Player enemyPlayer = mockGameState.getPlayers().get(1);
-		System.out.println(enemyPlayer.getBoard().toString());
-		System.out.println("PA TU SAM MAJKU MU");
-
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(mockGameState, currentPlayer);
 
 		System.out.println("Generated " + possibleMoves.size() + " possible moves for testing");
@@ -86,8 +74,6 @@ public class SampleAppService {
 		Board testBoard = currentPlayer.getBoard();
 
 		unifiedSession.insert(testBoard);
-		unifiedSession.insert(mockGameState);
-		unifiedSession.insert(currentPlayer);
 
 		for (Move move : possibleMoves) {
 			move.setScore(0); // Reset scores
@@ -101,17 +87,7 @@ public class SampleAppService {
 			// Enemy backward chaining session
 			KieSession enemySession = kieContainer.newKieSession("combinedBackwardSessionEnemy");
 
-			Board currentBoard = currentPlayer.getBoard();
-			enemySession.insert(currentBoard);
 			enemySession.insert(mockGameState);
-			enemySession.insert(currentPlayer);
-
-			// Insert enemy player(s)
-			for (Player player : mockGameState.getPlayers()) {
-				if (!player.getId().equals(currentPlayer.getId())) {
-					enemySession.insert(player);
-				}
-			}
 
 			for (Move move : possibleMoves) {
 				enemySession.insert(move);
@@ -138,11 +114,6 @@ public class SampleAppService {
 		return possibleMoves;
 	}
 
-    public Player getClassifiedItem(Player newItem) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getClassifiedItem'");
-    }
-
 	public MoveDTO getBestMove(GameState gameState) throws Exception {
 		Player currentPlayer = gameState.getPlayers().get(0);
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(gameState, currentPlayer);
@@ -162,19 +133,15 @@ public class SampleAppService {
 			
 			if (templateSession != null) {
 				log.info("Dynamic template session created successfully");
-				
-				log.info("Inserting " + possibleMoves.size() + " moves into template session");
+
+				Board originalBoard = currentPlayer.getBoard();
+				templateSession.insert(originalBoard);
+				log.info("Evaluating " + possibleMoves.size() + " moves in template session");
 				for (Move move : possibleMoves) {
-					// Create board state after move for template evaluation
-					Board originalBoard = currentPlayer.getBoard();
-					Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
-					BoardUtils.applyMoveToBoard(boardAfterMove, move);
-					
-					templateSession.insert(move);
-					templateSession.insert(boardAfterMove);
+					FactHandle moveHandle = templateSession.insert(move);
+					templateRulesFired += templateSession.fireAllRules();
+					templateSession.delete(moveHandle);
 				}
-				
-				templateRulesFired = templateSession.fireAllRules();
 				templateSession.dispose();
 				
 				log.info("Template rules fired: " + templateRulesFired);
@@ -191,21 +158,8 @@ public class SampleAppService {
 		for (Move move : possibleMoves) {
 			KieSession forwardSession = kieContainer.newKieSession("forwardSession");
 
-			Board originalBoard = currentPlayer.getBoard();
-			Board boardAfterMove = BoardUtils.copyBoard(originalBoard);
-			BoardUtils.applyMoveToBoard(boardAfterMove, move);
-
 			forwardSession.insert(move);
-			forwardSession.insert(boardAfterMove);
 			forwardSession.insert(gameState);
-			forwardSession.insert(currentPlayer);
-
-			// Insert enemy player(s) for blocking rules
-			for (Player player : gameState.getPlayers()) {
-				if (!player.getId().equals(currentPlayer.getId())) {
-					forwardSession.insert(player);
-				}
-			}
 
 			forwardRulesFired += forwardSession.fireAllRules();
 			forwardSession.dispose();
@@ -215,8 +169,6 @@ public class SampleAppService {
 		KieSession backwardSession = kieContainer.newKieSession("combinedBackwardSession");
 		Board currentBoard = currentPlayer.getBoard();
 		backwardSession.insert(currentBoard);
-		backwardSession.insert(gameState);
-		backwardSession.insert(currentPlayer);
 
 		for (Move move : possibleMoves) {
 			backwardSession.insert(move);
@@ -228,16 +180,7 @@ public class SampleAppService {
 		// 4. Apply enemy backward chaining
 		KieSession enemySession = kieContainer.newKieSession("combinedBackwardSessionEnemy");
 
-		enemySession.insert(currentBoard);
 		enemySession.insert(gameState);
-		enemySession.insert(currentPlayer);
-
-		// Insert enemy player(s)
-		for (Player player : gameState.getPlayers()) {
-			if (!player.getId().equals(currentPlayer.getId())) {
-				enemySession.insert(player);
-			}
-		}
 
 		for (Move move : possibleMoves) {
 			enemySession.insert(move);
@@ -245,17 +188,6 @@ public class SampleAppService {
 
 		int enemyRules = enemySession.fireAllRules();
 		enemySession.dispose();
-
-		for(Move move : possibleMoves) {
-			System.out.println(move.toString() + " => Score: " + move.getScore());
-			List<Map<Boolean, String>> appliedRules = move.getAppliedRules();
-			for(Map<Boolean, String> ruleDesc : appliedRules) {
-				System.out.println("   - " + ruleDesc);
-			}
-			if (move.getAppliedRules().isEmpty()) {
-				System.out.println("   (No rules applied)");
-			}
-		}
 
 		// Sort and return best move
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));

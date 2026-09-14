@@ -1,5 +1,6 @@
-import { elektra } from "@/app/layout";
-import React, { useState } from "react";
+import { elektra } from "@/app/fonts";
+import type React from "react";
+import { useId, useState } from "react";
 
 interface ScoreInputProps {
   initialScore?: number;
@@ -10,18 +11,20 @@ const ScoreInput: React.FC<ScoreInputProps> = ({
   initialScore = 0,
   onChange
 }) => {
+  const inputId = useId();
   const [score, setScore] = useState<number>(initialScore);
 
   const handleScoreChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newScore = parseInt(event.target.value) || 0;
+    const newScore = parseInt(event.target.value, 10) || 0;
     setScore(newScore);
     onChange?.(newScore);
   };
 
   return (
     <div className="flex flex-row items-center gap-3 p-4 bg-gray-100 rounded-lg" data-component="score-input">
-      <label className={`${elektra.className} text-xl font-bold text-gray-700 select-none`}>Score:</label>
+      <label htmlFor={inputId} className={`${elektra.className} text-xl font-bold text-gray-700 select-none`}>Score:</label>
       <input
+        id={inputId}
         type="number"
         value={score}
         onChange={handleScoreChange}

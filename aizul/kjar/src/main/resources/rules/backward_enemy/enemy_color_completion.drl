@@ -2,12 +2,12 @@ package rules.backward_enemy
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
-import com.ftn.sbnz.model.models.Tile;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.utils.BoardUtils;
 
 query "recursiveEnemyColorTileChain"( Move move, Board enemyBoard, Integer tilesOfColor )
-  eval(canEnemyCompleteColorWithMove(enemyBoard.getWall(), move, tilesOfColor))
+  eval(BoardUtils.canEnemyAdvanceColorSet(enemyBoard, move, tilesOfColor))
   or
   ( eval(tilesOfColor < 4) and recursiveEnemyColorTileChain( move, enemyBoard, tilesOfColor + 1; ) )
 end
@@ -17,9 +17,11 @@ rule "Block Enemy Color Progress"
     no-loop true
     when
         $move : Move()
-        $board : Board()
-        $player : Player($playerId : id, board == $board, $playerScore : score)
-        $enemyPlayer : Player(id != $playerId, $enemyBoard : board, $enemyScore : score)
+        $gameState : GameState($players : players)
+        $currentPlayer : Player() from $players
+        eval($currentPlayer == $players.get(0))
+        $enemyPlayer : Player($enemyBoard : board) from $players
+        eval($enemyPlayer != $currentPlayer)
         recursiveEnemyColorTileChain( $move, $enemyBoard, 2; )
         not String(this == "ENEMY_COLOR_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId())
     then
@@ -28,15 +30,13 @@ rule "Block Enemy Color Progress"
 
         int bonusPoints = 0;
         int tilesOfColor = 0;
-        Tile[][] enemyWall = $enemyBoard.getWall();
-
-        if (canEnemyCompleteColorWithMove(enemyWall, $move, 4)) {
+        if (BoardUtils.canEnemyAdvanceColorSet($enemyBoard, $move, 4)) {
             bonusPoints = 15;
             tilesOfColor = 4;
-        } else if (canEnemyCompleteColorWithMove(enemyWall, $move, 3)) {
+        } else if (BoardUtils.canEnemyAdvanceColorSet($enemyBoard, $move, 3)) {
             bonusPoints = 10;
             tilesOfColor = 3;
-        } else if (canEnemyCompleteColorWithMove(enemyWall, $move, 2)) {
+        } else if (BoardUtils.canEnemyAdvanceColorSet($enemyBoard, $move, 2)) {
             bonusPoints = 5;
             tilesOfColor = 2;
         }
@@ -44,30 +44,6 @@ rule "Block Enemy Color Progress"
         int newScore = $move.getScore() + bonusPoints;
         $move.setScore(newScore);
 
-        String message = "This move blocks enemy from completing a color set!";
+        String message = "You block player " + $enemyPlayer.getId() + " from advancing a " + BoardUtils.getMoveColor($move) + " wall-color set (currently " + tilesOfColor + "/5).";
         $move.addAppliedRule(true, message);
 end
-
-function boolean canEnemyCompleteColorWithMove(Tile[][] enemyWall, Move move, int existingColorCount) {
-    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) return false;
-
-    String moveColor = move.getTakenTiles().get(0).getColor();
-    if (moveColor == null || moveColor.isEmpty()) return false;
-
-    int colorCount = 0;
-
-    // Count how many tiles of this color the enemy already has on their wall
-    for (int row = 0; row < enemyWall.length; row++) {
-        for (int col = 0; col < enemyWall[row].length; col++) {
-            if (enemyWall[row][col] != null &&
-                enemyWall[row][col].getColor() != null &&
-                moveColor.equals(enemyWall[row][col].getColor())) {
-                colorCount++;
-            }
-        }
-    }
-
-    // If enemy has exactly the specified number of this color already placed,
-    // taking these tiles prevents them from completing the color set
-    return colorCount == existingColorCount;
-}

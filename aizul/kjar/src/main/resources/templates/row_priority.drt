@@ -13,7 +13,7 @@ rule "Row Priority - @{ruleName}"
         $m : Move(targetRow == @{rowNumber})
     then
         $m.setScore($m.getScore() + @{points});
-        String message = "You place tiles on row @{points}, and higher rows are more valuable.";
+        String message = "You place tiles on pattern line @{points}; longer pattern lines have greater heuristic value.";
         $m.addAppliedRule(true, message);
 end
 

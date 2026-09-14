@@ -138,8 +138,8 @@ public class RowPriorityTemplateProcessor {
             KieFileSystem kfs = kieServices.newKieFileSystem();
             
             // Add both generated rules to KieFileSystem
-            kfs.write("src/main/resources/dynamic_priority_rules.drl", priorityRules);
-            kfs.write("src/main/resources/dynamic_completion_rules.drl", completionRules);
+            kfs.write("src/main/resources/rules/templates/dynamic_priority_rules.drl", priorityRules);
+            kfs.write("src/main/resources/rules/templates/dynamic_completion_rules.drl", completionRules);
             
             KieBuilder kieBuilder = kieServices.newKieBuilder(kfs);
             kieBuilder.buildAll();

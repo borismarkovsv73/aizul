@@ -5,48 +5,21 @@ import com.ftn.sbnz.model.models.Board;
 import com.ftn.sbnz.model.models.Tile;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.utils.BoardUtils;
 
-rule "Strategic row completion"
+rule "Strategic wall-row completion"
     when
-        $m : Move($targetRow : targetRow)
-        $b : Board($wall : wall)
-        $player : Player(id == 1, $currentScore : score, board == $b)
+        $m : Move()
         $gameState : GameState($players : players)
-        eval($targetRow >= 0 && willCompleteWallRow($wall, $targetRow))
+        $currentPlayer : Player($board : board) from $players
+        eval($currentPlayer == $players.get(0))
+        eval(BoardUtils.willCompleteWallRowAfterMove($board, $m))
     then
-        if (isAheadOfOpponents($player, $players)) {
+        if (BoardUtils.isProjectedAheadAfterMove($currentPlayer, $players, $m)) {
             $m.setScore($m.getScore() + 15);
-            String message = "You can end the game and win with this move.";
-            $m.addAppliedRule(true, message);
+            $m.addAppliedRule(true, "After wall tiling, this move completes a wall row and ends the game while you are projected to lead.");
         } else {
             $m.setScore($m.getScore() - 15);
-            String message = "You can end the game now with this move, but you will lose.";
-            $m.addAppliedRule(false, message);
+            $m.addAppliedRule(false, "After wall tiling, this move completes a wall row and ends the game while you are not projected to lead.");
         }
 end
-
-function boolean willCompleteWallRow(Tile[][] wall, int targetRow) {
-    if (targetRow < 0 || targetRow >= wall.length) return false;
-    
-    int filledTiles = 0;
-    for (int col = 0; col < wall[targetRow].length; col++) {
-        if (wall[targetRow][col] != null) {
-            filledTiles++;
-        }
-    }
-    
-    return filledTiles == 4;
-}
-
-function boolean isAheadOfOpponents(Player currentPlayer, java.util.List players) {
-    int currentScore = currentPlayer.getScore();
-    
-    for (Object playerObj : players) {
-        Player player = (Player) playerObj;
-        if (!player.getId().equals(currentPlayer.getId()) && player.getScore() >= currentScore) {
-            return false;
-        }
-    }
-    
-    return true;
-}

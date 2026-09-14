@@ -2,81 +2,48 @@ package rules.backward_enemy
 
 import com.ftn.sbnz.model.models.Move;
 import com.ftn.sbnz.model.models.Board;
-import com.ftn.sbnz.model.models.Tile;
 import com.ftn.sbnz.model.models.Player;
 import com.ftn.sbnz.model.models.GameState;
+import com.ftn.sbnz.model.utils.BoardUtils;
 
 query "recursiveEnemyRowTileChain"( Move move, Board enemyBoard, Integer tilesOnRow )
-  eval(canEnemyCompleteRowWithMove(enemyBoard.getWall(), move, tilesOnRow))
+  eval(BoardUtils.canEnemyAdvanceWallRow(enemyBoard, move, tilesOnRow))
   or
   ( eval(tilesOnRow < 4) and recursiveEnemyRowTileChain( move, enemyBoard, tilesOnRow + 1; ) )
 end
 
-rule "Avoid Blocking Enemy Row When Behind"
+rule "Evaluate blocking an enemy wall-row finish"
     salience 95
     no-loop true
     when
         $move : Move()
-        $board : Board()
-        $player : Player(id == 1, board == $board, $playerScore : score)
-        $enemyPlayer : Player(id != 1, $enemyBoard : board, $enemyScore : score, $enemyScore + 10 < $playerScore)
+        $gameState : GameState($players : players)
+        $currentPlayer : Player() from $players
+        eval($currentPlayer == $players.get(0))
+        $enemyPlayer : Player($enemyBoard : board) from $players
+        eval($enemyPlayer != $currentPlayer)
         recursiveEnemyRowTileChain( $move, $enemyBoard, 3; )
         not String(this == "ENEMY_ENDGAME_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId())
     then
         String processed = "ENEMY_ENDGAME_PROCESSED_" + $move.hashCode() + "_" + $enemyPlayer.getId();
         insert(processed);
 
-        int penaltyPoints = 0;
+        int adjustment = 0;
         int tilesOnRow = 0;
-        String message = "";
-        Tile[][] enemyWall = $enemyBoard.getWall();
 
-        if (canEnemyCompleteRowWithMove(enemyWall, $move, 4)) {
-            penaltyPoints = 20;
+        if (BoardUtils.canEnemyAdvanceWallRow($enemyBoard, $move, 4)) {
+            adjustment = 20;
             tilesOnRow = 4;
-            message = "Enemy could complete a row and end the game with this move. Since you're winning, letting them end the game now secures your victory.";
-        } else if (canEnemyCompleteRowWithMove(enemyWall, $move, 3)) {
-            penaltyPoints = 3;
+        } else if (BoardUtils.canEnemyAdvanceWallRow($enemyBoard, $move, 3)) {
+            adjustment = 3;
             tilesOnRow = 3;
-            message = "Enemy is close to completing a row. Since you're winning, allowing the game to end soon might be advantageous.";
         }
 
-        int newScore = $move.getScore() - penaltyPoints;
-        $move.setScore(newScore);
-        $move.addAppliedRule(false, message);
+        if (BoardUtils.isProjectedAheadIfEnemyTakesMove($currentPlayer, $enemyPlayer, $players, $move)) {
+            $move.setScore($move.getScore() - adjustment);
+            $move.addAppliedRule(false, "Player " + $enemyPlayer.getId() + " can advance a wall row with this color; while you are projected to lead, blocking that route delays a favorable endgame.");
+        } else {
+            $move.setScore($move.getScore() + adjustment);
+            $move.addAppliedRule(true, "Player " + $enemyPlayer.getId() + " can advance a wall row with this color; while you are not projected to lead, blocking that route is valuable.");
+        }
 end
-
-function boolean canEnemyCompleteRowWithMove(Tile[][] enemyWall, Move move, int filledTiles) {
-    if (move.getTakenTiles() == null || move.getTakenTiles().isEmpty()) return false;
-
-    String moveColor = move.getTakenTiles().get(0).getColor();
-    if (moveColor == null || moveColor.isEmpty()) return false;
-
-    // Check each row in the enemy's wall
-    for (int row = 0; row < enemyWall.length; row++) {
-        int filledCount = 0;
-        boolean colorAlreadyInRow = false;
-        boolean hasEmptySpot = false;
-
-        // Count filled tiles and check if this color is already in this row
-        for (int col = 0; col < enemyWall[row].length; col++) {
-            if (enemyWall[row][col] != null) {
-                filledCount++;
-                // In Azul, each color can only appear once per row
-                if (enemyWall[row][col].getColor() != null &&
-                    enemyWall[row][col].getColor().equals(moveColor)) {
-                    colorAlreadyInRow = true;
-                }
-            } else {
-                hasEmptySpot = true;
-            }
-        }
-        // If this row has the right number of filled tiles AND has empty spots
-        // AND this color is NOT already in the row, then the enemy could use this color to complete it
-        if (filledCount == filledTiles && hasEmptySpot && !colorAlreadyInRow) {
-            return true;
-        }
-    }
-
-    return false;
-}

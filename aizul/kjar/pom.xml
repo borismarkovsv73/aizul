@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<drools.version>7.49.0.Final</drools.version>
+		<spring-boot.repackage.skip>true</spring-boot.repackage.skip>
 	</properties>
 	<dependencies>
 		<dependency>
