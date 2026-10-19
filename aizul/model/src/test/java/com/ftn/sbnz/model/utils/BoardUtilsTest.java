@@ -102,6 +102,67 @@ class BoardUtilsTest {
         assertEquals(1, move.getAppliedRules().size());
     }
 
+    @Test
+    void wallRowDepthIsTheNumberOfEmptyCellsIncludingThisPlacement() {
+        Board board = twoBlueTilesInThirdLine();
+        Move move = move(2, tile(80, "blue"));
+        int[] otherColumns = {0, 1, 3, 4};
+
+        assertTrue(BoardUtils.willAdvanceWallRowAtDepth(board, move, 5));
+        for (int filled = 1; filled <= 4; filled++) {
+            board.getWall()[2][otherColumns[filled - 1]] = tile(80 + filled, "filled-" + filled);
+            assertTrue(BoardUtils.willAdvanceWallRowAtDepth(board, move, 5 - filled));
+            assertFalse(BoardUtils.willAdvanceWallRowAtDepth(board, move, 6 - filled));
+        }
+    }
+
+    @Test
+    void wallColumnDepthIsTheNumberOfEmptyCellsIncludingThisPlacement() {
+        Board board = twoBlueTilesInThirdLine();
+        Move move = move(2, tile(90, "blue"));
+        int[] otherRows = {0, 1, 3, 4};
+
+        assertTrue(BoardUtils.willAdvanceWallColumnAtDepth(board, move, 5));
+        for (int filled = 1; filled <= 4; filled++) {
+            board.getWall()[otherRows[filled - 1]][2] = tile(90 + filled, "filled-" + filled);
+            assertTrue(BoardUtils.willAdvanceWallColumnAtDepth(board, move, 5 - filled));
+            assertFalse(BoardUtils.willAdvanceWallColumnAtDepth(board, move, 6 - filled));
+        }
+    }
+
+    @Test
+    void colorSetCountIsTheNumberOfSameColorTilesAlreadyOnTheWall() {
+        Board board = twoBlueTilesInThirdLine();
+        Move move = move(2, tile(100, "blue"));
+        int[] otherRows = {0, 1, 3, 4};
+
+        assertTrue(BoardUtils.willAdvanceColorSetAtCount(board, move, 0));
+        for (int count = 1; count <= 4; count++) {
+            int row = otherRows[count - 1];
+            board.getWall()[row][BoardUtils.getWallColumnForColor(row, "blue")] = tile(100 + count, "blue");
+            assertTrue(BoardUtils.willAdvanceColorSetAtCount(board, move, count));
+            assertFalse(BoardUtils.willAdvanceColorSetAtCount(board, move, count - 1));
+        }
+    }
+
+    @Test
+    void noGoalAdvancesWhenTheTargetWallCellIsAlreadyTiled() {
+        Board board = twoBlueTilesInThirdLine();
+        board.getWall()[2][2] = tile(110, "blue");
+        Move move = move(2, tile(111, "blue"));
+
+        assertFalse(BoardUtils.willAdvanceWallRowAtDepth(board, move, 4));
+        assertFalse(BoardUtils.willAdvanceWallColumnAtDepth(board, move, 4));
+        assertFalse(BoardUtils.willAdvanceColorSetAtCount(board, move, 1));
+    }
+
+    private static Board twoBlueTilesInThirdLine() {
+        Board board = emptyBoard();
+        board.getRows().get(2).set(0, tile(1, "blue"));
+        board.getRows().get(2).set(1, tile(2, "blue"));
+        return board;
+    }
+
     private static Board emptyBoard() {
         List<List<Tile>> rows = new ArrayList<>();
         for (int size = 1; size <= 5; size++) {

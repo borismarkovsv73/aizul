@@ -115,6 +115,18 @@ public class SampleAppService {
 	}
 
 	public MoveDTO getBestMove(GameState gameState) throws Exception {
+		List<Move> possibleMoves = rankMoves(gameState);
+
+		if (!possibleMoves.isEmpty()) {
+			Move bestMove = possibleMoves.get(0);
+			System.out.println("Best move: " + bestMove.toString() + " (Score: " + bestMove.getScore() + ")");
+			return new MoveDTO(bestMove, bestMove.toString());
+		}
+
+		return null;
+	}
+
+	public List<Move> rankMoves(GameState gameState) throws Exception {
 		Player currentPlayer = gameState.getPlayers().get(0);
 		List<Move> possibleMoves = MoveGenerator.generateAllValidMoves(gameState, currentPlayer);
 
@@ -189,18 +201,12 @@ public class SampleAppService {
 		int enemyRules = enemySession.fireAllRules();
 		enemySession.dispose();
 
-		// Sort and return best move
+		// Sort moves from best to worst
 		possibleMoves.sort((m1, m2) -> Integer.compare(m2.getScore(), m1.getScore()));
 
 		System.out.println("AI Analysis: " + possibleMoves.size() + " moves, " + templateRulesFired + " template rules, " + forwardRulesFired + " forward rules, " + backwardRules + " backward rules, " + enemyRules + " enemy rules");
 
-		if (!possibleMoves.isEmpty()) {
-			Move bestMove = possibleMoves.get(0);
-			System.out.println("Best move: " + bestMove.toString() + " (Score: " + bestMove.getScore() + ")");
-			return new MoveDTO(bestMove, bestMove.toString());
-		}
-
-		return null;
+		return possibleMoves;
 	}
 
 }
