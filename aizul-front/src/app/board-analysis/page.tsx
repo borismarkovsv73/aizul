@@ -23,33 +23,25 @@ export default function BoardDemo() {
   };
 
   const parseMoveForHighlights = (moveResult: any) => {
-    if (!moveResult || !moveResult.description) return;
+    if (!moveResult) return;
 
-    // Parse description like "Take 1 blue tiles from factory 5 and place on row 4"
-    // or "Take 2 red tiles from the center and place on the floor"
-    const description = moveResult.description;
+    // factoryId matches the ids sent in collectGameStateFromDOM:
+    // 1-5 for factories, -1 for the center
+    const factoryId = moveResult.factoryId;
+    const factory =
+      Number.isInteger(factoryId) &&
+      (factoryId === -1 || (factoryId >= 1 && factoryId <= 5))
+        ? factoryId
+        : null;
 
-    // Extract factory number or center
-    let factory = null;
-    const factoryMatch = description.match(/from factory (-?\d+)/);
-    if (factoryMatch) {
-      factory = parseInt(factoryMatch[1], 10);
-    } else if (description.includes("from the center")) {
-      factory = -1;
-    }
+    // targetRow is already 0-indexed: 0-4 for pattern lines, -1 for the floor
+    const targetRow = moveResult.targetRow;
+    const row =
+      Number.isInteger(targetRow) && targetRow >= -1 && targetRow <= 4
+        ? targetRow
+        : null;
 
-    // Extract row number or floor
-    let row = null;
-    const rowMatch = description.match(/place on row (-?\d+)/);
-    if (rowMatch) {
-      // Convert from 1-indexed (backend) to 0-indexed (frontend)
-      row = parseInt(rowMatch[1], 10) - 1;
-    } else if (description.includes("place on the floor")) {
-      row = -1;
-    }
-
-    console.log("Parsed highlights - Factory:", factory, "Row:", row);
-    console.log("Original description:", description);
+    console.log("Move highlights - Factory:", factory, "Row:", row);
 
     setHighlightedFactory(factory);
     setHighlightedRow(row);
